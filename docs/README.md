@@ -10,7 +10,7 @@ What the server does and how. Each document states the current design; the reaso
 
 | Document | Covers |
 |---|---|
-| [overview.md](design/overview.md) | Goals, non-goals, architecture, module layout |
+| [overview.md](design/overview.md) | Goals, non-goals, architecture, module layout, running the server |
 | [security-model.md](design/security-model.md) | Parity with the Python server, the access object, structural enforcement, PowerShell hardening |
 | [access-control.md](design/access-control.md) | Inheritance, deny, `$root` / `$tags`, name and path resolution, information hiding |
 | [config.md](design/config.md) | `config.json` format, validation, compatibility with the Python server |
