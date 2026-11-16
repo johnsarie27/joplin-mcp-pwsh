@@ -9,7 +9,7 @@ Guidance for AI coding agents working in this repository. It covers rules that a
 ## Design docs and ADRs are the source of truth
 
 - [`docs/design/`](docs/design/) states the current design. Read the relevant document before changing behavior it covers, and update it in the same PR when behavior changes.
-- [`docs/adr/`](docs/adr/) records the decisions and their reasoning. A new architecturally significant decision gets a new ADR with the next number. Never edit an accepted ADR's Context, Decision or Consequences: a later ADR supersedes or amends it, and only the old ADR's Status section changes. Conventions are in [docs/README.md](docs/README.md#adr-conventions).
+- [`docs/adr/`](docs/adr/) records the decisions and their reasoning. A new architecturally significant decision gets a new ADR with the next number. Never edit an accepted ADR's Context, Decision or Consequences: a later ADR supersedes or amends it, and only the old ADR's Status section changes. Update the [ADR index](docs/adr/README.md) in the same PR; it also holds the conventions.
 - [`docs/research/`](docs/research/) is a point-in-time record. Don't update it to match later changes; add a new record instead.
 - Issue #1 holds the original design discussion. Its comments are hidden as outdated; where they differ from `docs/`, `docs/` wins.
 
