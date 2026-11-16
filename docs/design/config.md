@@ -28,7 +28,7 @@
 |---|---|---|
 | `id` | notebook id (32 hex), title, `/`-separated path, `*`, `$root`, `$tags` | Resolution order: exact id, then path (contains an unescaped `/`), then plain title. Paths are anchored at the root; titles compare case-insensitively. `\/` is a literal slash and `\\` a literal backslash in a title (written `"Q3\\/Q4 Plans"` in JSON). |
 | `access` | `read` (default), `write`, `none` | `write` implies `read`. `none` denies the notebook and its entire subtree, and always wins. |
-| `descendants` | boolean, default `false` | Applies the entry to the notebook and every notebook below it. Not allowed on `none` (always recursive) or on sentinels. See the open question about `*` below. |
+| `descendants` | boolean, default `false` | Applies the entry to the notebook and every notebook below it. Not allowed on `none` (always recursive) or on sentinels. On `*` it has no effect and logs a warning (see [below](#the-descendants-flag-on-the-wildcard-entry)). |
 
 ## Rules in brief
 
@@ -53,9 +53,21 @@ The following are a fatal `ConfigError`:
 - empty path segments (`A//B`, a leading or trailing `/`);
 - an invalid backslash escape (anything other than `\/` or `\\`).
 
-## Open question: `descendants` on `*`
+The following load normally but warn on stderr:
 
-The source design is inconsistent here. [ADR 1](../adr/0001-opt-in-descendant-inheritance.md) calls `descendants` on `*` a no-op (since `*` already covers everything), the consolidated config table lists it as not allowed, and the list of fatal `ConfigError` cases does not mention it. Decide whether it is accepted silently, warned about, or rejected, then update this page and the tests.
+- a grant or deny entry that matches no notebook ([access-control.md](access-control.md#ambiguity));
+- a `none` entry that matches several notebooks;
+- `descendants: true` on `*` ([below](#the-descendants-flag-on-the-wildcard-entry)).
+
+### The descendants flag on the wildcard entry
+
+`{ "id": "*", "descendants": true }` is accepted, and the flag is ignored with a stderr warning such as `Config entry "*": descendants has no effect on "*", which already covers every notebook.`
+
+- **Why not an error:** the entry grants exactly the same access with or without the flag, so refusing the config would protect nothing. The Python server loads it (it ignores `descendants`), so rejecting it would also make a shared config unloadable here over a flag that changes nothing.
+- **Why not silent:** writing it suggests a misunderstanding of `*`, which already covers every notebook, and the warning says so.
+- This differs from `none` on `*` and `descendants` on sentinels, which are errors because they would change or misstate what the entry grants.
+
+The original design discussion called this case a no-op (Decision 1 in issue #1); the warning was added when settling it (#13).
 
 ## Compatibility with the Python server
 
