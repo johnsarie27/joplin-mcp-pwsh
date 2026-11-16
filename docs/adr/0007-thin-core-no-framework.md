@@ -4,6 +4,14 @@
 
 Accepted — 2026-11-15
 
+Amended by [ADR-0008](0008-powershell-7-6-floor.md) — 2026-11-15. Three statements below are now inaccurate and are left in place:
+
+- The Context bullet saying pwsh.mcp's PowerShell 7.5 requirement is "above this project's 7.4 floor". The floor is now 7.6, so pwsh.mcp's requirement is below it.
+- The Decision bullet listing "7.4 floor" among the things any framework would need added. The floor is now 7.6; that item no longer applies.
+- The Consequences bullet reading "The 7.4 floor is kept." ADR-0008 replaces it with a 7.6 floor.
+
+Everything else in this record still stands, including the decision: the per-tool access gate, strict argument validation and stdout isolation are still missing from all three frameworks.
+
 ## Context
 
 - Three existing PowerShell MCP frameworks were reviewed and run on PowerShell 7.7: MCP.SDK, pwsh.mcp and PoshMCP ([comparison](../research/framework-evaluation/comparison.md)).

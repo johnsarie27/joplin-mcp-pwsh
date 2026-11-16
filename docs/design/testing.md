@@ -111,7 +111,7 @@ One Pester file per private function (`tests/Private/<Function>.Tests.ps1`), plu
 ## CI
 
 - PSScriptAnalyzer and a pinned Pester version, in separate jobs.
-- A matrix of Linux, macOS and Windows on PowerShell 7.4 and the latest release.
+- A matrix of Linux, macOS and Windows on each runner's installed PowerShell, which must be at least 7.6, the floor ([ADR 8](../adr/0008-powershell-7-6-floor.md)). Verify the runners' version when CI is set up.
 - GitHub Actions pinned by commit SHA.
 - Test-result artifacts.
 

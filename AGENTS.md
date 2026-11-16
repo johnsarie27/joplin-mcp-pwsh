@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository. It covers rules that a
 
 ## Project
 
-`JoplinMcp`: a Joplin MCP server in PowerShell 7.4+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
+`JoplinMcp`: a Joplin MCP server in PowerShell 7.6+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
 
 ## Design docs and ADRs are the source of truth
 
@@ -31,7 +31,7 @@ Each is explained in the linked document; these are the ones a small, reasonable
 - **Invoke the registered scriptblock, never a command name**, and never splat client-supplied keys. ([security-model.md](docs/design/security-model.md#powershell-specific-hardening))
 - **Hidden looks like missing.** No response may vary with content the caller cannot see: no counts, hints or distinct errors. ([access-control.md](docs/design/access-control.md#information-hiding))
 - **Only `Invoke-JoplinApi` touches the token**, and no error message carries a raw exception or URL.
-- **PowerShell 7.4 is the floor.** Don't use features from later versions.
+- **PowerShell 7.6 is the floor.** Don't use features from later versions. ([ADR 8](docs/adr/0008-powershell-7-6-floor.md))
 
 ## Workflow
 

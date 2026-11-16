@@ -1,6 +1,6 @@
 # Documentation
 
-Design documentation for `JoplinMcp`, a Joplin MCP server in PowerShell 7.4+ with per-notebook access control. Start with the [overview](design/overview.md).
+Design documentation for `JoplinMcp`, a Joplin MCP server in PowerShell 7.6+ with per-notebook access control. Start with the [overview](design/overview.md).
 
 The design was worked out in [issue #1](https://github.com/johnsarie27/joplin-mcp-pwsh/issues/1) (transferred from the Python server's repository). These files are now the source of truth. The issue's comments are the original, timestamped discussion behind the ADRs; they are hidden as outdated and can be expanded on the issue page.
 
@@ -29,6 +29,7 @@ What the server does and how. Each document states the current design; the reaso
 | [5](adr/0005-hidden-indistinguishable-from-missing.md) | Hidden content is indistinguishable from missing content |
 | [6](adr/0006-repository-and-module-name.md) | Repository and module name |
 | [7](adr/0007-thin-core-no-framework.md) | Thin core instead of an MCP framework |
+| [8](adr/0008-powershell-7-6-floor.md) | PowerShell 7.6 as the minimum version |
 
 ### ADR conventions
 

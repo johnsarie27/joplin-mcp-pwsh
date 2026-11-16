@@ -1,18 +1,19 @@
 # Overview
 
-A Joplin MCP server written in PowerShell 7.4+. It exposes Joplin's Web Clipper REST API as MCP tools over stdio, behind a per-notebook access-control model.
+A Joplin MCP server written in PowerShell 7.6+ ([ADR 8](../adr/0008-powershell-7-6-floor.md)). It exposes Joplin's Web Clipper REST API as MCP tools over stdio, behind a per-notebook access-control model.
 
 It is the PowerShell sibling of the Python server, [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). Throughout these docs, "the Python server" means that repository.
 
 ## Goals
 
-- Expose Joplin's Web Clipper REST API as MCP tools over stdio, written in PowerShell 7.4+.
+- Expose Joplin's Web Clipper REST API as MCP tools over stdio, written in PowerShell 7.6+.
 - Reproduce the Python server's security model (per-notebook read/write access, fail-closed by default, access checked on the note's notebook) and extend it with opt-in inheritance, explicit deny, paths and tag management. See [access-control.md](access-control.md).
 - Be testable (Pester 5) and keep the access layer small enough to audit.
 
 ## Non-goals
 
 - **Windows PowerShell 5.1 support.** Encoding and stdout behavior differ; not worth the compatibility cost.
+- **PowerShell versions out of Microsoft support.** The floor is the current LTS release and moves with it ([ADR 8](../adr/0008-powershell-7-6-floor.md)).
 - **Arbitrary script execution.** Only registered tool handlers can run.
 - **A config format that diverges from the Python server without reason.** The config is a superset: entries that use only the Python server's keys and unambiguous ids or titles grant the same access in both servers. New keys are designed to fail safe on the Python server (`descendants` is ignored, so it stays flat and narrower; paths match nothing; `access: "none"` makes it refuse to load). Known behavioral differences are listed in [access-control.md](access-control.md#intentional-differences-from-the-python-server).
 
