@@ -2,7 +2,7 @@
 
 Design documentation for `JoplinMcp`, a Joplin MCP server in PowerShell 7.4+ with per-notebook access control. Start with the [overview](design/overview.md).
 
-The design was worked out in [issue #1](https://github.com/johnsarie27/joplin-mcp-pwsh/issues/1) (transferred from the Python server's repository). These files are now the source of truth; the issue keeps the discussion history.
+The design was worked out in [issue #1](https://github.com/johnsarie27/joplin-mcp-pwsh/issues/1) (transferred from the Python server's repository). These files are now the source of truth. The issue's comments are the original, timestamped discussion behind the ADRs; they are hidden as outdated and can be expanded on the issue page.
 
 ## Design
 
@@ -49,3 +49,5 @@ Evidence behind decisions, kept as a record rather than maintained as current de
 | [framework-evaluation/pwsh-mcp.md](research/framework-evaluation/pwsh-mcp.md) | pwsh.mcp review |
 | [framework-evaluation/poshmcp.md](research/framework-evaluation/poshmcp.md) | PoshMCP review |
 | [slash-in-notebook-titles.md](research/slash-in-notebook-titles.md) | Open live check: `/` and `\` in Joplin notebook titles |
+| [effort-estimate.md](research/effort-estimate.md) | Per-piece effort estimate made before implementation |
+| [original-outline.md](research/original-outline.md) | The first, superseded outline of the design, preserved verbatim |

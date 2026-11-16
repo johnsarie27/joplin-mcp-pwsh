@@ -8,7 +8,9 @@ Many cases below come from defects observed in the [evaluated frameworks](../res
 
 ### Parity with the Python server
 
-A parity matrix against the Python server's tests: `read` / `write` / `*` / `$root`, name vs id, write-implies-read, empty config fails closed.
+A parity matrix against the Python server's tests: `read` / `write` / `*` / `$root`, name vs id, ambiguous names, write-implies-read, empty config fails closed.
+
+Where this server is intentionally stricter, the matrix asserts the difference rather than parity: an ambiguous grant name grants nothing here, where the Python server grants every match ([ADR 4](../adr/0004-name-resolution-and-paths.md)). The full list of differences is in [access-control.md](access-control.md#intentional-differences-from-the-python-server); each one should appear in the matrix as an explicit expected difference.
 
 ### Inheritance ([ADR 1](../adr/0001-opt-in-descendant-inheritance.md))
 

@@ -100,7 +100,7 @@ Decided in [ADR 4](../adr/0004-name-resolution-and-paths.md).
 An entry's `id` is resolved in this order:
 
 1. **Exact id.** A 32-char hex string is treated as an id first. Ids need no escaping and are the most robust option (stable across renames and moves).
-2. **Path**, if the value contains an unescaped `/`.
+2. **Path**, if the value contains an unescaped `/`. An unescaped `Personal/Tech` always means a path, never a literal title; a title containing `/` is addressed as `Personal\/Tech` or by id.
 3. **Plain title**, matched against every notebook's own title anywhere in the tree (parity with the Python server).
 
 ### Paths
