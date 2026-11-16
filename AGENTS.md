@@ -1,0 +1,40 @@
+# AGENTS.md
+
+Guidance for AI coding agents working in this repository. It covers rules that are not obvious from the code and are costly to get wrong; the design itself lives in [`docs/`](docs/README.md).
+
+## Project
+
+`JoplinMcp`: a Joplin MCP server in PowerShell 7.4+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
+
+## Design docs and ADRs are the source of truth
+
+- [`docs/design/`](docs/design/) states the current design. Read the relevant document before changing behavior it covers, and update it in the same PR when behavior changes.
+- [`docs/adr/`](docs/adr/) records the decisions and their reasoning. A new architecturally significant decision gets a new ADR with the next number. Never edit an accepted ADR's Context, Decision or Consequences: a later ADR supersedes or amends it, and only the old ADR's Status section changes. Conventions are in [docs/README.md](docs/README.md#adr-conventions).
+- [`docs/research/`](docs/research/) is a point-in-time record. Don't update it to match later changes; add a new record instead.
+- Issue #1 holds the original design discussion. Its comments are hidden as outdated; where they differ from `docs/`, `docs/` wins.
+
+## Secrets: never print `config.json`
+
+`config.json` (gitignored) holds the live Joplin Web Clipper `token`. Anything an agent prints goes into the session transcript, so never expose that file, or whatever `$env:JOPLIN_CONFIG` points at, by any means. Joplin requires the token in the query string, so a request URL contains it too: never print request URLs.
+
+- To learn the config's shape, read `config.example.json` (or [docs/design/config.md](docs/design/config.md)).
+- To check a specific key, load the file in code and print only non-secret facts (key names, lengths, counts).
+- In smoke tests, print result sizes or status codes, never the config or a URL.
+- If the token is exposed, tell the user to regenerate it in Joplin (Settings → Web Clipper) and update `config.json`.
+
+## Rules the implementation must keep
+
+Each is explained in the linked document; these are the ones a small, reasonable-looking change can break.
+
+- **Nothing but protocol messages on stdout.** Diagnostics go to stderr; handlers run through `Invoke-HandlerIsolated` and return exactly one value. A stray `Write-Host` or pipeline output corrupts the JSON-RPC stream. ([security-model.md](docs/design/security-model.md#powershell-specific-hardening), [dispatcher.md](docs/design/dispatcher.md))
+- **Every tool declares `Access`** (`Read`, `Write`, `CreateNotebook` or `ManageTags`) and does per-note checks through `Get-AccessibleNote` / `Select-ReadableNotes`, never by fetching and filtering itself. ([security-model.md](docs/design/security-model.md#structural-enforcement), [tools.md](docs/design/tools.md))
+- **Invoke the registered scriptblock, never a command name**, and never splat client-supplied keys. ([security-model.md](docs/design/security-model.md#powershell-specific-hardening))
+- **Hidden looks like missing.** No response may vary with content the caller cannot see: no counts, hints or distinct errors. ([access-control.md](docs/design/access-control.md#information-hiding))
+- **Only `Invoke-JoplinApi` touches the token**, and no error message carries a raw exception or URL.
+- **PowerShell 7.4 is the floor.** Don't use features from later versions.
+
+## Workflow
+
+- All changes go through a pull request from a `feature/` or `fix/` branch; don't commit to `main`.
+- Commit and PR subjects follow `feat(<scope>): <title> (refs #<issue>)`; the PR title uses `(closes #<issue>)`.
+- Pin GitHub Actions by commit SHA, not by tag.
