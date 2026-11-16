@@ -1,6 +1,6 @@
 # Documentation
 
-Design documentation for `JoplinMcp`, a Joplin MCP server in PowerShell 7.4+ with per-notebook access control. Start with the [overview](design/overview.md).
+Design documentation for `JoplinMcp`, a Joplin MCP server in PowerShell 7.6+ with per-notebook access control. Start with the [overview](design/overview.md).
 
 The design was worked out in [issue #1](https://github.com/johnsarie27/joplin-mcp-pwsh/issues/1) (transferred from the Python server's repository). These files are now the source of truth. The issue's comments are the original, timestamped discussion behind the ADRs; they are hidden as outdated and can be expanded on the issue page.
 
@@ -20,23 +20,7 @@ What the server does and how. Each document states the current design; the reaso
 
 ## Architecture decisions
 
-| ADR | Decision |
-|---|---|
-| [1](adr/0001-opt-in-descendant-inheritance.md) | Opt-in descendant inheritance |
-| [2](adr/0002-explicit-deny-wins.md) | Explicit deny that always wins |
-| [3](adr/0003-root-and-tags-sentinels.md) | `$root` and `$tags` sentinels |
-| [4](adr/0004-name-resolution-and-paths.md) | Ambiguous name resolution and notebook paths |
-| [5](adr/0005-hidden-indistinguishable-from-missing.md) | Hidden content is indistinguishable from missing content |
-| [6](adr/0006-repository-and-module-name.md) | Repository and module name |
-| [7](adr/0007-thin-core-no-framework.md) | Thin core instead of an MCP framework |
-
-### ADR conventions
-
-- Michael Nygard's format: Title, Status, Context, Decision, Consequences, and no other sections.
-- **Deviation:** the Status line carries the ISO date the status took effect (`Accepted — 2026-11-15`).
-- Rationale and rejected alternatives are recorded as "Why" and "Rejected" bullets inside Decision, so the five-section format is kept.
-- Numbers are monotonic and never reused. Accepted ADRs are not rewritten; a later ADR supersedes or amends them.
-- There is no "we will use ADRs" record; this section serves that purpose, and ADR 1 is the first design decision.
+Why the design is the way it is. The [ADR index](adr/README.md) lists every ADR with its status, which later ADRs amend or supersede which earlier ones, and the conventions for writing them.
 
 ## Research
 

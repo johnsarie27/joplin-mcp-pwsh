@@ -4,12 +4,12 @@ Guidance for AI coding agents working in this repository. It covers rules that a
 
 ## Project
 
-`JoplinMcp`: a Joplin MCP server in PowerShell 7.4+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
+`JoplinMcp`: a Joplin MCP server in PowerShell 7.6+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
 
 ## Design docs and ADRs are the source of truth
 
 - [`docs/design/`](docs/design/) states the current design. Read the relevant document before changing behavior it covers, and update it in the same PR when behavior changes.
-- [`docs/adr/`](docs/adr/) records the decisions and their reasoning. A new architecturally significant decision gets a new ADR with the next number. Never edit an accepted ADR's Context, Decision or Consequences: a later ADR supersedes or amends it, and only the old ADR's Status section changes. Conventions are in [docs/README.md](docs/README.md#adr-conventions).
+- [`docs/adr/`](docs/adr/) records the decisions and their reasoning. A new architecturally significant decision gets a new ADR with the next number. Never edit an accepted ADR's Context, Decision or Consequences: a later ADR supersedes or amends it, and only the old ADR's Status section changes. Update the [ADR index](docs/adr/README.md) in the same PR; it also holds the conventions.
 - [`docs/research/`](docs/research/) is a point-in-time record. Don't update it to match later changes; add a new record instead.
 - Issue #1 holds the original design discussion. Its comments are hidden as outdated; where they differ from `docs/`, `docs/` wins.
 
@@ -31,7 +31,7 @@ Each is explained in the linked document; these are the ones a small, reasonable
 - **Invoke the registered scriptblock, never a command name**, and never splat client-supplied keys. ([security-model.md](docs/design/security-model.md#powershell-specific-hardening))
 - **Hidden looks like missing.** No response may vary with content the caller cannot see: no counts, hints or distinct errors. ([access-control.md](docs/design/access-control.md#information-hiding))
 - **Only `Invoke-JoplinApi` touches the token**, and no error message carries a raw exception or URL.
-- **PowerShell 7.4 is the floor.** Don't use features from later versions.
+- **PowerShell 7.6 is the floor.** Don't use features from later versions. ([ADR 8](docs/adr/0008-powershell-7-6-floor.md))
 
 ## Workflow
 
