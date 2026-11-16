@@ -35,6 +35,16 @@ Each is explained in the linked document; these are the ones a small, reasonable
 
 ## Workflow
 
-- All changes go through a pull request from a `feature/` or `fix/` branch; don't commit to `main`.
+- All changes go through a pull request from a `feature/` or `fix/` branch; don't commit to `main`. The `protect` ruleset blocks direct pushes, force-pushes and deleting `main`.
+- Every PR has an issue: open one first, or use the task issue it completes. The PR body says `Closes #<issue>.`
 - Commit and PR subjects follow `feat(<scope>): <title> (refs #<issue>)`; the PR title uses `(closes #<issue>)`.
 - Pin GitHub Actions by commit SHA, not by tag. The one exception is the build harness, `jjohns-dev/pwsh-module-ci`, which is called by its `@v2` major tag by design ([ADR 10](docs/adr/0010-adopt-pwsh-module-ci.md)).
+
+### Getting a PR merged
+
+- **The maintainer reviews every PR. Merge only after they explicitly approve it.** Opening a PR, or a green check, is not approval.
+- Merge with squash (`gh pr merge <n> --squash --delete-branch`). The squash commit takes the PR title, and the head branch is deleted on merge.
+- The ruleset requires the branch to be up to date with `main`. If `main` has moved, update the branch (`gh api -X PUT repos/johnsarie27/joplin-mcp-pwsh/pulls/<n>/update-branch`) and wait for the checks to pass again before merging.
+- Required checks: `docs` today; the build harness's checks are added once they exist ([testing.md](docs/design/testing.md#ci)).
+- When a PR closes one of the task issues listed on issue #1, tick its box there by hand; GitHub does not tick it automatically.
+- Write issue and PR bodies to a file and pass `--body-file`, then read the body back to check it. Interpolating a body inline has dropped `$root` / `$tags` and collapsed line breaks before.
