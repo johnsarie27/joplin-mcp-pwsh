@@ -20,6 +20,7 @@ Where this server is intentionally stricter, the matrix asserts the difference r
 - Moved notebook: re-resolution picks up the new tree.
 - Orphan and cycle guards.
 - A non-boolean `descendants` is a `ConfigError`.
+- `descendants: true` on `*` loads, grants exactly what plain `*` grants, and writes one warning to stderr and nothing to stdout ([config.md](config.md#the-descendants-flag-on-the-wildcard-entry)).
 
 ### Deny ([ADR 2](../adr/0002-explicit-deny-wins.md))
 
