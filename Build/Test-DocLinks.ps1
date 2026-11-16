@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.4
 <#
 .SYNOPSIS
     Check relative links and heading anchors in the repository's Markdown files.
@@ -13,93 +13,177 @@
     finding links.
 .PARAMETER Path
     Repository root to scan. Defaults to the parent of this script's folder.
-.EXAMPLE
-    ./Build/Test-DocLinks.ps1
+.INPUTS
+    None.
 .OUTPUTS
-    None. Writes one line per problem and exits 1 if any are found, otherwise exits 0.
+    System.String. A summary line, then one line per broken link. Exits 1 if any link is broken,
+    otherwise 0.
+.EXAMPLE
+    PS C:\> ./Build/Test-DocLinks.ps1
+    Checks every Markdown file in the repository that contains this script.
+.EXAMPLE
+    PS C:\> ./Build/Test-DocLinks.ps1 -Path ./fixtures/docs
+    Checks the Markdown files under a different folder.
+.NOTES
+    Status: Stable
+    Run by .github/workflows/docs.yml as the required docs check.
 #>
 [CmdletBinding()]
-param(
-    [Parameter()]
-    [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })]
-    [string] $Path = (Split-Path -Path $PSScriptRoot -Parent)
+[OutputType([System.String])]
+Param(
+    [Parameter(HelpMessage = 'Repository root to scan')]
+    [ValidateScript({
+        if (Test-Path -LiteralPath $_ -PathType 'Container') { $true }
+        else { Write-Error -Message ('Folder not found: [{0}]' -f $_) -ErrorAction Stop }
+    })]
+    [System.String] $Path = (Split-Path -Path $PSScriptRoot -Parent)
 )
 
 $ErrorActionPreference = 'Stop'
 
+#region - FUNCTIONS ============================================================
+# MATCHES A FENCED CODE BLOCK OPENED AND CLOSED BY THE SAME ``` OR ~~~ MARKER
+$fencePattern = '(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[^\r\n]*$'
+
 function Get-MarkdownProse {
-    # RETURNS THE TEXT WITH FENCED CODE BLOCKS AND INLINE CODE SPANS REMOVED
-    param([string] $Text)
-    $noFences = [regex]::Replace($Text, '(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[^\r\n]*$', '')
-    return [regex]::Replace($noFences, '`[^`\r\n]*`', '')
+    <#
+    .SYNOPSIS
+        Remove fenced code blocks and inline code spans from Markdown text.
+    .PARAMETER Text
+        Markdown text.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    Param(
+        [Parameter(Mandatory, HelpMessage = 'Markdown text')]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [System.String] $Text
+    )
+    ($Text -replace $fencePattern, '') -replace '`[^`\r\n]*`', ''
 }
 
 function Get-HeadingAnchor {
-    # GITHUB-STYLE SLUGS FOR EVERY HEADING IN A FILE, WITH -N SUFFIXES FOR DUPLICATES
-    param([string] $FilePath)
-    $text = Get-Content -LiteralPath $FilePath -Raw
-    $noFences = [regex]::Replace($text, '(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[^\r\n]*$', '')
+    <#
+    .SYNOPSIS
+        Get the GitHub-style anchor for every heading in a Markdown file.
+    .DESCRIPTION
+        Returns a set of anchors. A heading's anchor is its text with link markup reduced to the link
+        text, lowercased, with punctuation other than hyphens and underscores removed and spaces
+        replaced by hyphens. A repeated heading gets a -1, -2, ... suffix, as GitHub renders it.
+    .PARAMETER FilePath
+        Path of the Markdown file.
+    .OUTPUTS
+        System.Collections.Generic.HashSet[System.String].
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Collections.Generic.HashSet[System.String]])]
+    Param(
+        [Parameter(Mandatory, HelpMessage = 'Path of the Markdown file')]
+        [ValidateNotNullOrEmpty()]
+        [System.String] $FilePath
+    )
+    $text = (Get-Content -LiteralPath $FilePath -Raw) -replace $fencePattern, ''
     $seen = @{}
-    $anchors = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-    foreach ($match in [regex]::Matches($noFences, '(?m)^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$')) {
-        $heading = [regex]::Replace($match.Groups[1].Value, '\[([^\]]*)\]\([^)]*\)', '$1')
+    $anchors = [System.Collections.Generic.HashSet[System.String]]::new([System.StringComparer]::Ordinal)
+    $headings = Select-String -InputObject $text -Pattern '(?m)^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$' -AllMatches
+
+    foreach ($match in $headings.Matches) {
+        # REDUCE LINKS TO THEIR TEXT, THEN SLUG THE HEADING
+        $heading = $match.Groups[1].Value -replace '\[([^\]]*)\]\([^)]*\)', '$1'
         $slug = ($heading.ToLowerInvariant() -replace '[^\p{L}\p{N}\s_-]', '') -replace '\s', '-'
+
+        # REPEATED HEADINGS GET -1, -2, ... IN ORDER OF APPEARANCE
         if ($seen.ContainsKey($slug)) {
             $seen[$slug]++
-            [void] $anchors.Add("$slug-$($seen[$slug])")
+            [void] $anchors.Add(('{0}-{1}' -f $slug, $seen[$slug]))
         }
         else {
             $seen[$slug] = 0
             [void] $anchors.Add($slug)
         }
     }
-    return , $anchors
+    Write-Output -InputObject $anchors -NoEnumerate
 }
 
+#endregion =====================================================================
+
+
+#region - CHECK LINKS ==========================================================
+# FIND EVERY MARKDOWN FILE OUTSIDE .git AND .agent-tmp
 $root = (Resolve-Path -LiteralPath $Path).Path
-$skip = [regex] '[\\/](\.git|\.agent-tmp)([\\/]|$)'
-$files = Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.md' -Force |
-    Where-Object { -not $skip.IsMatch($_.FullName.Substring($root.Length)) }
+$childItemParams = @{
+    LiteralPath = $root
+    Filter      = '*.md'
+    Recurse     = $true
+    File        = $true
+    Force       = $true
+}
+$skipPattern = '[\\/](\.git|\.agent-tmp)([\\/]|$)'
+$files = (Get-ChildItem @childItemParams).Where({ $PSItem.FullName.Substring($root.Length) -notmatch $skipPattern })
 
 $anchorCache = @{}
-$problems = [System.Collections.Generic.List[string]]::new()
+$problems = [System.Collections.Generic.List[System.String]]::new()
 $linkCount = 0
 
 foreach ($file in $files) {
-    $relativeFile = [System.IO.Path]::GetRelativePath($root, $file.FullName)
+    $relativeFile = Resolve-Path -LiteralPath $file.FullName -Relative -RelativeBasePath $root
     $prose = Get-MarkdownProse -Text (Get-Content -LiteralPath $file.FullName -Raw)
-    foreach ($match in [regex]::Matches($prose, '\]\(([^)\s]*)\)')) {
+    $links = Select-String -InputObject $prose -Pattern '\]\(([^)\s]*)\)' -AllMatches
+
+    foreach ($match in $links.Matches) {
+        # SKIP EXTERNAL AND EMPTY LINKS
         $target = $match.Groups[1].Value
-        if ($target -match '^(https?|mailto):' -or [string]::IsNullOrEmpty($target)) { continue }
-        $linkCount++
-
-        $pathPart, $anchor = $target -split '#', 2
-        $targetPath = if ($pathPart) {
-            [System.IO.Path]::GetFullPath((Join-Path -Path $file.DirectoryName -ChildPath ([uri]::UnescapeDataString($pathPart))))
-        }
-        else { $file.FullName }
-
-        if (-not (Test-Path -LiteralPath $targetPath)) {
-            $problems.Add("${relativeFile}: missing target '$target'")
+        if ([System.String]::IsNullOrEmpty($target) -or $target -match '^(https?|mailto):') {
             continue
         }
-        if ($anchor) {
-            if (Test-Path -LiteralPath $targetPath -PathType Container) {
-                $problems.Add("${relativeFile}: anchor on a folder '$target'")
-                continue
-            }
-            if (-not $anchorCache.ContainsKey($targetPath)) { $anchorCache[$targetPath] = Get-HeadingAnchor -FilePath $targetPath }
-            if (-not $anchorCache[$targetPath].Contains($anchor)) {
-                $problems.Add("${relativeFile}: no heading for anchor '$target'")
-            }
+        $linkCount++
+
+        # RESOLVE THE TARGET; GetFullPath NORMALISES PATHS THAT MAY NOT EXIST, WHICH NO CMDLET DOES
+        $pathPart, $anchor = $target -split '#', 2
+        $targetPath = $file.FullName
+        if ($pathPart) {
+            $joinedPath = Join-Path -Path $file.DirectoryName -ChildPath ([System.Uri]::UnescapeDataString($pathPart))
+            $targetPath = [System.IO.Path]::GetFullPath($joinedPath)
+        }
+
+        if (-not (Test-Path -LiteralPath $targetPath)) {
+            $problems.Add(('{0}: missing target [{1}]' -f $relativeFile, $target))
+            continue
+        }
+        if (-not $anchor) {
+            continue
+        }
+
+        # AN ANCHOR MUST NAME A HEADING IN A FILE
+        if (Test-Path -LiteralPath $targetPath -PathType 'Container') {
+            $problems.Add(('{0}: anchor on a folder [{1}]' -f $relativeFile, $target))
+            continue
+        }
+        if (-not $anchorCache.ContainsKey($targetPath)) {
+            $anchorCache[$targetPath] = Get-HeadingAnchor -FilePath $targetPath
+        }
+        if (-not $anchorCache[$targetPath].Contains($anchor)) {
+            $problems.Add(('{0}: no heading for anchor [{1}]' -f $relativeFile, $target))
         }
     }
 }
 
-Write-Output "Checked $linkCount relative links in $(@($files).Count) Markdown files."
+#endregion =====================================================================
+
+
+#region - REPORT ===============================================================
+# SUMMARY, THEN ONE LINE PER PROBLEM; A NON-ZERO EXIT FAILS THE CI CHECK
+Write-Output -InputObject ('Checked {0} relative links in {1} Markdown files.' -f $linkCount, $files.Count)
 if ($problems.Count -gt 0) {
-    $problems | ForEach-Object { Write-Output "  $_" }
-    Write-Output "$($problems.Count) broken link(s)."
+    foreach ($problem in $problems) {
+        Write-Output -InputObject ('  {0}' -f $problem)
+    }
+    Write-Output -InputObject ('{0} broken link(s).' -f $problems.Count)
     exit 1
 }
-Write-Output 'No broken links.'
+Write-Output -InputObject 'No broken links.'
+
+#endregion =====================================================================
