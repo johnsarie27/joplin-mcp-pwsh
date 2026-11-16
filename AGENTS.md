@@ -42,7 +42,7 @@ Each is explained in the linked document; these are the ones a small, reasonable
 
 ### Getting a PR merged
 
-- **The maintainer reviews every PR. Merge only after they explicitly approve it.** Opening a PR, or a green check, is not approval.
+- **Before merging any PR, ask the maintainer whether they want to review it first, and wait for the answer.** There is no rule for which PRs they review; they decide each time. Merge only once they approve it or tell you to go ahead. Opening a PR, or a green check, is not approval.
 - Merge with squash (`gh pr merge <n> --squash --delete-branch`). The squash commit takes the PR title, and the head branch is deleted on merge.
 - The ruleset requires the branch to be up to date with `main`. If `main` has moved, update the branch (`gh api -X PUT repos/johnsarie27/joplin-mcp-pwsh/pulls/<n>/update-branch`) and wait for the checks to pass again before merging.
 - Required checks: `docs` today; the build harness's checks are added once they exist ([testing.md](docs/design/testing.md#ci)).
