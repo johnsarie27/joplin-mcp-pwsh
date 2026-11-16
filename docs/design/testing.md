@@ -1,6 +1,6 @@
 # Testing
 
-Pester 5 is the test framework. The safety properties (registry invariants, stdout isolation, argument strictness) are meant to exist as tests before the features they protect.
+Tests use Pester, at the version the build harness pins (6.2.0 at the time of writing; [ADR 10](../adr/0010-adopt-pwsh-module-ci.md)). The safety properties (registry invariants, stdout isolation, argument strictness) are meant to exist as tests before the features they protect.
 
 Many cases below come from defects observed in the [evaluated frameworks](../research/framework-evaluation/comparison.md), so they are known-real regressions rather than hypothetical ones.
 
@@ -106,14 +106,27 @@ Where this server is intentionally stricter, the matrix asserts the difference r
 
 ## Test layout
 
-One Pester file per private function (`tests/Private/<Function>.Tests.ps1`), plus module-level tests and the registry, protocol and information-hiding suites above.
+The harness discovers tests one folder below `Tests/`, named in lowercase: `Tests/<area>/*.tests.ps1`, and `*.tests.windows.ps1` for Windows-only tests.
+
+- `Tests/Private/<function>.tests.ps1`: one file per private function.
+- `Tests/Public/start-joplinmcpserver.tests.ps1`: the entry point, including `-ListTools` against the golden file.
+- `Tests/Registry/`, `Tests/Protocol/`, `Tests/Access/`: the registry, protocol, access-layer and information-hiding suites above.
+
+The harness adds its own shared tests to every run (manifest, file encoding, path literals), so this repository does not keep copies of them.
 
 ## CI
 
-- PSScriptAnalyzer and a pinned Pester version, in separate jobs.
-- A matrix of Linux, macOS and Windows on each runner's installed PowerShell, which must be at least 7.6, the floor ([ADR 8](../adr/0008-powershell-7-6-floor.md)). Verify the runners' version when CI is set up.
-- GitHub Actions pinned by commit SHA.
-- Test-result artifacts.
+CI comes from the shared harness, `jjohns-dev/pwsh-module-ci` `@v2` ([ADR 10](../adr/0010-adopt-pwsh-module-ci.md)):
+
+- **`ci`:** stages the module, runs PSScriptAnalyzer (fails on Error and Warning) and Pester on Linux, macOS and Windows, then verifies the JUnit result: no result file, any error at the root, or zero tests fails the run. Set a `min-tests` floor once the suite exists, and raise it as the suite grows.
+- **`pssa-sarif`:** analyzer findings for the whole repository in the Security tab.
+- **`release`:** builds the module archive; on a pull request, runs everything except publishing.
+- **`docs`** (this repository): `Build/Test-DocLinks.ps1`, the broken-link check.
+- **PowerShell version:** each runner's installed PowerShell, which must be at least 7.6, the floor ([ADR 8](../adr/0008-powershell-7-6-floor.md)). The runner images listed 7.6.9–7.6.10 when checked on 2026-11-15, and the harness's manifest test fails on any runner older than the manifest's `PowerShellVersion`.
+- **Pinning:** third-party Actions by commit SHA; the harness by its `@v2` major tag (the one exception).
+- **Required checks:** the `protect` ruleset requires `docs` today; add the harness's checks once they have run and their names exist.
+
+Run the same build locally with the shim: `./Build/build.ps1 -ResolveDependency -TaskList Init`, then `./Build/build.ps1 -TaskList CombineFunctionsAndStage, Analyze, Test`.
 
 ## Manual
 

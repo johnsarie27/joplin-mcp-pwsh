@@ -8,7 +8,7 @@ It is the PowerShell sibling of the Python server, [`johnsarie27/joplin-mcp`](ht
 
 - Expose Joplin's Web Clipper REST API as MCP tools over stdio, written in PowerShell 7.6+.
 - Reproduce the Python server's security model (per-notebook read/write access, fail-closed by default, access checked on the note's notebook) and extend it with opt-in inheritance, explicit deny, paths and tag management. See [access-control.md](access-control.md).
-- Be testable (Pester 5) and keep the access layer small enough to audit.
+- Be testable (Pester, built and run by the shared harness in [ADR 10](../adr/0010-adopt-pwsh-module-ci.md)) and keep the access layer small enough to audit.
 
 ## Non-goals
 
@@ -33,10 +33,14 @@ The core is written from scratch rather than built on an existing PowerShell MCP
 
 ## Module layout
 
+`JoplinMcp` is a PowerShell module whose exported `Start-JoplinMcpServer` is the server's entry point ([ADR 9](../adr/0009-module-with-exported-entry-point.md)). The module sits at the repository root, in the shape the build harness expects ([ADR 10](../adr/0010-adopt-pwsh-module-ci.md)):
+
 ```text
-JoplinMcp/
-├── JoplinMcp.psd1 / JoplinMcp.psm1
-├── Start-JoplinMcpServer.ps1        # entry point: pwsh -NoProfile -NonInteractive -File ...
+joplin-mcp-pwsh/
+├── JoplinMcp.psd1                   # manifest: PowerShellVersion 7.6, FunctionsToExport = Public/ names
+├── JoplinMcp.psm1                   # root module: dot-sources Public/ and Private/; writes nothing on import
+├── Public/
+│   └── Start-JoplinMcpServer.ps1     # the server entry point; -ListTools prints the tool schemas and exits
 ├── Private/
 │   ├── Config.ps1                   # Import-JoplinConfig + validation
 │   ├── Access.ps1                   # [NotebookAccess], Resolve-NotebookAccess, Get-AccessibleNote, Select-ReadableNotes
@@ -44,10 +48,30 @@ JoplinMcp/
 │   ├── Protocol.ps1                 # stdio loop, JSON-RPC routing, response writer
 │   ├── Registry.ps1                 # Register-JoplinTool, schema validation
 │   └── Tools/                       # one file per tool, each calls Register-JoplinTool
-└── tests/                           # Pester 5: config, access, registry invariants, dispatcher
+├── Tests/<area>/*.tests.ps1         # Pester; see testing.md
+├── Build/build.ps1                  # harness shim for local builds (copied from the harness template)
+└── .github/workflows/               # thin callers of the harness, plus the docs check
 ```
 
+Only the manifest, root module, `README.md`, `Public/` and `Private/` ship in the built module. Exported functions are commands for the person running the server; the MCP tools are never exported as PowerShell commands.
+
 The module is named `JoplinMcp` and the repository `joplin-mcp-pwsh` ([ADR 6](../adr/0006-repository-and-module-name.md)).
+
+## Running the server
+
+An MCP client starts the server as a process. With the module installed in a folder on `PSModulePath`, PowerShell auto-loads it:
+
+```json
+{
+  "command": "pwsh",
+  "args": ["-NoProfile", "-NonInteractive", "-Command", "Start-JoplinMcpServer"],
+  "env": { "JOPLIN_CONFIG": "/path/to/config.json" }
+}
+```
+
+- `-NoProfile` keeps profile output off the protocol stream; `-NonInteractive` makes any prompt fail instead of hanging.
+- A module outside `PSModulePath` needs `Import-Module <path>; Start-JoplinMcpServer` as the command, which is awkward to quote in JSON, so installing into a module folder is the supported path.
+- Until the module is published to the PowerShell Gallery, installation means extracting a release archive into a module folder. Publishing is a separate, undecided step.
 
 **No port discovery.** An early outline scanned ports 41184–41194 for the Clipper server. That is dropped: the Python server reads `host`/`port` from config (default `localhost:41184`), and so does this one. See [config.md](config.md).
 
@@ -60,4 +84,4 @@ The module is named `JoplinMcp` and the repository `joplin-mcp-pwsh` ([ADR 6](..
 | `config.json` format and validation | [config.md](config.md) |
 | Tool registry, `tools/list`, tool inventory | [tools.md](tools.md) |
 | stdio loop, dispatch, error conventions | [dispatcher.md](dispatcher.md) |
-| Test plan | [testing.md](testing.md) |
+| Test plan and CI | [testing.md](testing.md) |

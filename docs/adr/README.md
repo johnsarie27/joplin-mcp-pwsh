@@ -14,6 +14,8 @@ Every architecture decision for `JoplinMcp`, with its current status and how lat
 | [6](0006-repository-and-module-name.md) | Repository and module name | Accepted — 2026-11-15 | |
 | [7](0007-thin-core-no-framework.md) | Thin core instead of an MCP framework | Accepted — 2026-11-15 | Amended by [ADR 8](0008-powershell-7-6-floor.md) |
 | [8](0008-powershell-7-6-floor.md) | PowerShell 7.6 as the minimum version | Accepted — 2026-11-15 | |
+| [9](0009-module-with-exported-entry-point.md) | A module with an exported server entry point | Accepted — 2026-11-15 | |
+| [10](0010-adopt-pwsh-module-ci.md) | Build and test with `pwsh-module-ci` | Accepted — 2026-11-15 | |
 
 ## Supersessions and amendments
 

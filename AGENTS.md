@@ -37,4 +37,4 @@ Each is explained in the linked document; these are the ones a small, reasonable
 
 - All changes go through a pull request from a `feature/` or `fix/` branch; don't commit to `main`.
 - Commit and PR subjects follow `feat(<scope>): <title> (refs #<issue>)`; the PR title uses `(closes #<issue>)`.
-- Pin GitHub Actions by commit SHA, not by tag.
+- Pin GitHub Actions by commit SHA, not by tag. The one exception is the build harness, `jjohns-dev/pwsh-module-ci`, which is called by its `@v2` major tag by design ([ADR 10](docs/adr/0010-adopt-pwsh-module-ci.md)).
