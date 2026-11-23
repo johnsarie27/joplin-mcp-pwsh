@@ -1,7 +1,7 @@
 BeforeDiscovery {
     if (-not $env:BHProjectName) {
         $env:BHProjectName = 'JoplinMcp'
-        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'JoplinMcp.psd1'))
+        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..', '..', 'JoplinMcp.psd1'))
     }
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
@@ -24,7 +24,7 @@ Describe -Name 'Protocol loop' -Fixture {
             if ($Raw) {
                 return $output
             }
-            , @($output -split "`n" | Where-Object { $_ -ne '' } | ForEach-Object { $_ | ConvertFrom-Json -AsHashtable })
+            , @(@($output -split "`n").Where({ $_ -ne '' }).ForEach({ $_ | ConvertFrom-Json -AsHashtable }))
         }
         $script:addTool = {
             param([System.String] $Name, [System.Management.Automation.ScriptBlock] $Handler)
@@ -42,7 +42,6 @@ Describe -Name 'Protocol loop' -Fixture {
             }
         }
     }
-
     Context -Name 'one response per request' -Fixture {
         It -Name 'answers each request with exactly one line, in order' -Test {
             $responses = & $script:run @(
@@ -91,7 +90,6 @@ Describe -Name 'Protocol loop' -Fixture {
             $raw | Should -Be ('{"jsonrpc":"2.0","id":1,"result":{}}' + "`n")
         }
     }
-
     Context -Name 'errors' -Fixture {
         It -Name 'answers malformed JSON with -32700 and a null id, and keeps going' -Test {
             $responses = & $script:run @('{not json', '{"jsonrpc":"2.0","id":2,"method":"ping"}')
@@ -151,7 +149,7 @@ Describe -Name 'Protocol loop' -Fixture {
         It -Name 'answers -32603 with a generic message when an unexpected exception escapes' -Test {
             $output = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock {
                 $writer = [System.IO.StringWriter]::new()
-                Mock -CommandName 'Get-ToolList' -MockWith { throw [System.InvalidOperationException]::new('boom https://localhost:41184/x?token=SECRET-TOKEN') }
+                Mock -CommandName 'Get-ToolList' -MockWith { Write-Error -Exception ([System.InvalidOperationException]::new('boom https://localhost:41184/x?token=SECRET-TOKEN')) -ErrorAction Stop }
                 Invoke-McpLine -Line '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' -Writer $writer
                 $writer.ToString()
             }
@@ -160,15 +158,14 @@ Describe -Name 'Protocol loop' -Fixture {
             $output | Should -Not -BeLike '*boom*'
         }
     }
-
     Context -Name 'initialize' -Fixture {
         It -Name 'echoes a protocol version the server supports' -Test {
-            $supported = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock { $script:SupportedProtocolVersions[0] }
+            $supported = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock { $supported_protocol_versions[0] }
             $line = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"' + $supported + '"}}'
             (& $script:run @($line))[0].result.protocolVersion | Should -Be $supported
         }
         It -Name 'returns the latest supported version instead of echoing one it does not support' -Test {
-            $latest = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock { $script:SupportedProtocolVersions[-1] }
+            $latest = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock { $supported_protocol_versions[-1] }
             $line = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1999-01-01"}}'
             (& $script:run @($line))[0].result.protocolVersion | Should -Be $latest
         }
@@ -183,7 +180,6 @@ Describe -Name 'Protocol loop' -Fixture {
             $result.serverInfo.version | Should -Match '^\d+\.\d+\.\d+'
         }
     }
-
     Context -Name 'tools/call' -Fixture {
         It -Name 'answers an unknown tool with -32602, not an isError result' -Test {
             $response = (& $script:run @('{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nope","arguments":{}}}'))[0]
@@ -225,14 +221,14 @@ Describe -Name 'Protocol loop' -Fixture {
             (& $script:run @('{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ZZ_TEST_EXACT","arguments":{}}}'))[0].error.code | Should -Be -32602
         }
         It -Name 'reports a failure inside a tool as an isError result, never a JSON-RPC error' -Test {
-            & $script:addTool 'zz_test_fail' { throw [McpToolError]::new('Note not found.') }
+            & $script:addTool 'zz_test_fail' { Write-Error -Exception ([McpToolError]::new('Note not found.')) -ErrorAction Stop }
             $response = (& $script:run @('{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"zz_test_fail","arguments":{}}}'))[0]
             $response.ContainsKey('error') | Should -BeFalse
             $response.result.isError | Should -BeTrue
             $response.result.content[0].text | Should -Be 'Note not found.'
         }
         It -Name 'hides the text of any other exception, which may carry a URL and the token' -Test {
-            & $script:addTool 'zz_test_leak' { throw [System.Net.Http.HttpRequestException]::new('GET https://localhost:41184/notes?token=SECRET-TOKEN failed') }
+            & $script:addTool 'zz_test_leak' { Write-Error -Exception ([System.Net.Http.HttpRequestException]::new('GET https://localhost:41184/notes?token=SECRET-TOKEN failed')) -ErrorAction Stop }
             $raw = & $script:run -Raw $true -Lines @('{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"zz_test_leak","arguments":{}}}')
             $raw | Should -Not -BeLike '*SECRET-TOKEN*'
             $raw | Should -Not -BeLike '*localhost*'
@@ -271,13 +267,14 @@ Describe -Name 'Protocol loop' -Fixture {
             $result.content[0].text | Should -BeLike 'Tag management*'
         }
     }
-
     Context -Name 'serialization' -Fixture {
         It -Name 'fails loudly, writing nothing, when a message is nested too deeply to serialize' -Test {
             $threw = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock {
                 $writer = [System.IO.StringWriter]::new()
                 $deep = @{ leaf = 1 }
-                1..40 | ForEach-Object { $deep = @{ nested = $deep } }
+                foreach ($level in 1..40) {
+                    $deep = @{ nested = $deep }
+                }
                 $caught = $false
                 try {
                     Write-McpMessage -Writer $writer -Message ([ordered]@{ jsonrpc = '2.0'; id = 1; result = $deep })

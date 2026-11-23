@@ -42,19 +42,19 @@ joplin-mcp-pwsh/
 ├── Public/
 │   └── Start-JoplinMcpServer.ps1     # the server entry point; -ListTools prints the tool schemas and exits
 ├── Private/
-│   ├── Config.ps1                   # Import-JoplinConfig + validation
-│   ├── Access.ps1                   # [JoplinToolAccess], [NotebookAccess], Resolve-NotebookAccess, Get-AccessibleNote, Select-ReadableNotes
-│   ├── Client.ps1                   # Invoke-JoplinApi (token handling, error scrubbing, ID validation)
-│   ├── Errors.ps1                   # [McpProtocolError], [McpToolError], [NotebookAccessError], Get-SafeErrorMessage
-│   ├── Protocol.ps1                 # stdio loop, JSON-RPC routing, Invoke-ToolCall, Invoke-HandlerIsolated, response writer
-│   ├── Registry.ps1                 # Register-JoplinTool, schema validation
-│   └── Tools/                       # one file per tool, each calls Register-JoplinTool
+│   ├── Classes/                     # [JoplinToolAccess], [NotebookAccess], [McpProtocolError], [McpToolError], [NotebookAccessError]; loaded first
+│   ├── Import-JoplinConfig.ps1      # config loading + validation (to come)
+│   ├── Resolve-NotebookAccess.ps1   # builds [NotebookAccess]; Get-AccessibleNote and Select-ReadableNotes sit beside it (to come)
+│   ├── Invoke-JoplinApi.ps1         # token handling, error scrubbing, ID validation (to come)
+│   ├── Invoke-McpLoop.ps1           # stdio loop; Invoke-McpLine, Invoke-ToolCall, Invoke-HandlerIsolated, Write-Mcp*, ConvertTo-McpJson
+│   ├── Register-JoplinTool.ps1      # tool registry; Test-ToolArgument, Get-ToolList beside it
+│   └── Tools/                       # one file per tool, each calls Register-JoplinTool (to come)
 ├── Tests/<area>/*.tests.ps1         # Pester; see testing.md
 ├── Build/build.ps1                  # harness shim for local builds (copied from the harness template)
 └── .github/workflows/               # thin callers of the harness, plus the docs check
 ```
 
-The root module dot-sources `Public/` and then `Private/`, each in name order, and a class must be defined before a file uses it as a type literal in a parameter. `Access.ps1` and `Errors.ps1` define the classes and sort before the files that need them, so a new class goes in a file that sorts before its first user.
+One function per file, named after the function, as in the other modules. The root module dot-sources `Private/Classes/` first, then `Public/`, then `Private/`, each in name order. A class must be defined before a file uses it as a type in a parameter, which is why the classes sit apart, and a class file may only use classes that sort before it (`NotebookAccessError` extends `McpToolError`).
 
 Only the manifest, root module, `README.md`, `Public/` and `Private/` ship in the built module. Exported functions are commands for the person running the server; the MCP tools are never exported as PowerShell commands.
 

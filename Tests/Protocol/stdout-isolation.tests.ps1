@@ -1,7 +1,7 @@
 BeforeDiscovery {
     if (-not $env:BHProjectName) {
         $env:BHProjectName = 'JoplinMcp'
-        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'JoplinMcp.psd1'))
+        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..', '..', 'JoplinMcp.psd1'))
     }
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
@@ -37,13 +37,12 @@ Import-Module -Name $Manifest -Force -ErrorAction Stop
     }
     Register-JoplinTool -Name 'leaky' -Description 'Fails with a message that holds a URL and a token.' -Access CreateNotebook -InputSchema $schema -Handler {
         param($Arguments, $Access)
-        throw [System.Net.Http.HttpRequestException]::new('GET http://localhost:41184/notes?token=SECRET-TOKEN failed')
+        Write-Error -Exception ([System.Net.Http.HttpRequestException]::new('GET http://localhost:41184/notes?token=SECRET-TOKEN failed')) -ErrorAction Stop
     }
 }
 Start-JoplinMcpServer
 '@
         Set-Content -LiteralPath $scriptPath -Value $serverScript -Encoding utf8NoBOM
-
         # RUNS THE SERVER, FEEDS IT THE LINES, CLOSES STDIN, AND RETURNS STDOUT (BYTES AND TEXT), STDERR AND THE EXIT CODE
         $script:runServer = {
             param([System.String[]] $Lines)
@@ -88,22 +87,21 @@ Start-JoplinMcpServer
             '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"leaky","arguments":{}}}'
             '{"jsonrpc":"2.0","id":4,"method":"ping"}'
         )
-        $script:stdoutLines = @($script:session.Stdout -split "`n" | Where-Object { $_ -ne '' })
+        $script:stdoutLines = @(@($script:session.Stdout -split "`n").Where({ $_ -ne '' }))
     }
-
     It -Name 'exits promptly when stdin closes' -Test {
         $script:session.Exited | Should -BeTrue
         $script:session.ExitCode | Should -Be 0
     }
     It -Name 'writes only JSON-RPC messages to stdout: one parseable line per request, none for the notification' -Test {
-        # 1 initialize, 2 noisy, a parse error, 3 leaky and 4 ping; the notification gets no line
+        # 1 INITIALIZE, 2 NOISY, A PARSE ERROR, 3 LEAKY AND 4 PING; THE NOTIFICATION GETS NO LINE
         $script:stdoutLines | Should -HaveCount 5
         foreach ($line in $script:stdoutLines) {
             { $line | ConvertFrom-Json -AsHashtable -ErrorAction Stop } | Should -Not -Throw
         }
     }
     It -Name 'answers in order, with the noisy tool''s single value as its result' -Test {
-        $responses = $script:stdoutLines | ForEach-Object { $_ | ConvertFrom-Json -AsHashtable }
+        $responses = $script:stdoutLines.ForEach({ $_ | ConvertFrom-Json -AsHashtable })
         $responses[0].id | Should -Be 1
         $responses[1].id | Should -Be 2
         $responses[1].result.isError | Should -BeFalse
@@ -114,7 +112,7 @@ Start-JoplinMcpServer
     It -Name 'keeps Write-Host, warnings, verbose, debug, information, errors and Console writes off stdout' -Test {
         $script:session.Stdout | Should -Not -BeLike '*STRAY*'
     }
-    # THE Console WRITES ARE MOVED BY [Console]::SetOut. THE OTHER SIX ARE CAUGHT BY Invoke-HandlerIsolated, WHICH TAGS EACH WITH ITS
+    # THE CONSOLE WRITES ARE MOVED BY [Console]::SetOut. THE OTHER SIX ARE CAUGHT BY Invoke-HandlerIsolated, WHICH TAGS EACH WITH ITS
     # RECORD TYPE. ASSERTING THE TAG, NOT JUST THE TEXT, IS WHAT SHOWS THAT SECOND LAYER WORKS: WITHOUT IT THE HOST WOULD STILL
     # WRITE THE TEXT TO THE REDIRECTED Console.Out, SO A TEXT-ONLY CHECK PASSES EITHER WAY
     It -Name 'sends <Marker> to stderr, tagged <Expected>' -ForEach @(
@@ -134,8 +132,9 @@ Start-JoplinMcpServer
         $script:session.Bytes | Should -Not -Contain ([System.Byte] 13)
     }
     It -Name 'carries no ANSI escape code in either stream' -Test {
-        $script:session.Stdout | Should -Not -BeLike "*$([System.Char]27)*"
-        $script:session.Stderr | Should -Not -BeLike "*$([System.Char]27)*"
+        $escape = [System.Char] 27
+        $script:session.Stdout.Contains($escape) | Should -BeFalse
+        $script:session.Stderr.Contains($escape) | Should -BeFalse
     }
     It -Name 'leaks the token to neither stream when a tool fails with a URL in its exception' -Test {
         $script:session.Stdout | Should -Not -BeLike '*SECRET-TOKEN*'

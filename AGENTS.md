@@ -30,6 +30,7 @@ Each is explained in the linked document; these are the ones a small, reasonable
 - **Every tool declares `Access`** (`Read`, `Write`, `CreateNotebook` or `ManageTags`) and does per-note checks through `Get-AccessibleNote` / `Select-ReadableNotes`, never by fetching and filtering itself. ([security-model.md](docs/design/security-model.md#structural-enforcement), [tools.md](docs/design/tools.md))
 - **Invoke the registered scriptblock, never a command name**, and never splat client-supplied keys. ([security-model.md](docs/design/security-model.md#powershell-specific-hardening))
 - **Hidden looks like missing.** No response may vary with content the caller cannot see: no counts, hints or distinct errors. ([access-control.md](docs/design/access-control.md#information-hiding))
+- **No `throw`.** Raise errors with `Write-Error -Exception <typed exception> -ErrorAction Stop`, which keeps the exception type and its `Code`, so a typed `catch` still matches. One function per file, named after it; classes go in `Private/Classes/`, which loads first.
 - **Only `Invoke-JoplinApi` touches the token**, and no error message carries a raw exception or URL.
 - **PowerShell 7.6 is the floor.** Don't use features from later versions. ([ADR 8](docs/adr/0008-powershell-7-6-floor.md))
 

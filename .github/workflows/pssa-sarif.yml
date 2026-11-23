@@ -6,13 +6,18 @@ on:
     branches: ["*"]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: pssa-sarif-${{ github.ref }}
   cancel-in-progress: true
 
+# Nothing by default; the job below asks for exactly what the harness needs.
+permissions: {}
+
 jobs:
   analyze:
+    # Pinned by the harness's major tag on purpose (ADR 10); see ci.yml.
     uses: jjohns-dev/pwsh-module-ci/.github/workflows/pssa-sarif.yml@v2
     permissions:
       contents: read

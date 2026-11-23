@@ -6,13 +6,20 @@ on:
     branches: ["*"]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Nothing by default; the job below asks for exactly what the harness needs.
+permissions: {}
+
 jobs:
   validate:
+    # The harness is pinned by its moving major tag, not a SHA, on purpose: it is maintained by the same person and
+    # delivers centralized Action bumps through the tag (ADR 10). Third-party Actions in this repository stay
+    # SHA-pinned. A reusable-workflow call takes no timeout-minutes; the harness sets its own.
     uses: jjohns-dev/pwsh-module-ci/.github/workflows/ci.yml@v2
     # No os-matrix: the harness default runs Linux, macOS and Windows.
     # min-tests is set after the first green run, from the executed count in the run's JUnit artifact

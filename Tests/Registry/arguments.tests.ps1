@@ -1,7 +1,7 @@
 BeforeDiscovery {
     if (-not $env:BHProjectName) {
         $env:BHProjectName = 'JoplinMcp'
-        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'JoplinMcp.psd1'))
+        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..', '..', 'JoplinMcp.psd1'))
     }
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
@@ -39,7 +39,6 @@ Describe -Name 'Argument strictness' -Fixture {
             }
         }
     }
-
     It -Name 'accepts arguments that match the schema exactly' -Test {
         & $script:check @{ query = 'tax'; limit = 20; done = $false; mode = 'fast'; tags = @('a', 'b'); note_id = ('0123456789abcdef' * 2) } | Should -BeNullOrEmpty
     }

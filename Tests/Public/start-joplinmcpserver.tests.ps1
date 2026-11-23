@@ -1,7 +1,7 @@
 BeforeDiscovery {
     if (-not $env:BHProjectName) {
         $env:BHProjectName = 'JoplinMcp'
-        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'JoplinMcp.psd1'))
+        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..', '..', 'JoplinMcp.psd1'))
     }
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
@@ -10,9 +10,8 @@ BeforeDiscovery {
 
 Describe -Name 'Start-JoplinMcpServer' -Fixture {
     BeforeAll {
-        $script:golden = (Get-Content -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath 'Registry', 'tools-list.golden.json') -Raw).Trim()
+        $script:golden = (Get-Content -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath '..', 'Registry', 'tools-list.golden.json') -Raw).Trim()
     }
-
     Context -Name '-ListTools' -Fixture {
         It -Name 'returns the tools/list JSON and matches the golden file' -Test {
             Start-JoplinMcpServer -ListTools | Should -Be $script:golden
@@ -44,7 +43,6 @@ Describe -Name 'Start-JoplinMcpServer' -Fixture {
             $stderrTask.Result | Should -BeNullOrEmpty
         }
     }
-
     Context -Name 'importing the module' -Fixture {
         It -Name 'exports only Start-JoplinMcpServer' -Test {
             @((Get-Module -Name $env:BHProjectName).ExportedFunctions.Keys) | Should -Be @('Start-JoplinMcpServer')

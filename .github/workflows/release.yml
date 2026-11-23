@@ -1,6 +1,7 @@
 name: release
 run-name: release ${{ github.ref_name }}
 
+# No workflow_dispatch on purpose: a manual run is not a pull request, so dry-run would be false and it would publish.
 on:
   pull_request:
     branches: ["*"]
@@ -8,12 +9,18 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # v0.1.0
 
+# A release is never cancelled half way.
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# Nothing by default; the job below asks for exactly what the harness needs.
+permissions: {}
+
 jobs:
   release:
+    # Pinned by the harness's major tag on purpose (ADR 10); see ci.yml. Only a tag push publishes: a pull request
+    # runs the whole release path with dry-run set, which skips only the publishing step.
     uses: jjohns-dev/pwsh-module-ci/.github/workflows/release.yml@v2
     with:
       artifact-name: ${{ github.event_name == 'pull_request' && 'JoplinMcp-dry-run' || format('JoplinMcp-{0}', github.ref_name) }}

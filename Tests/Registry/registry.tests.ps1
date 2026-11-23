@@ -1,7 +1,7 @@
 BeforeDiscovery {
     if (-not $env:BHProjectName) {
         $env:BHProjectName = 'JoplinMcp'
-        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'JoplinMcp.psd1'))
+        $env:BHPSModuleManifest = [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '..', '..', 'JoplinMcp.psd1'))
     }
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
@@ -51,7 +51,6 @@ Describe -Name 'Tool registry' -Fixture {
             }
         }
     }
-
     Context -Name 'registration' -Fixture {
         It -Name 'registers a valid tool and publishes it in the tools/list shape' -Test {
             & $script:register | Should -BeNullOrEmpty
@@ -127,7 +126,6 @@ Describe -Name 'Tool registry' -Fixture {
             }
         }
     }
-
     Context -Name 'published tool list' -Fixture {
         It -Name 'lists tools in name order, whatever order they were registered in' -Test {
             & $script:register @{ Name = 'zz_test_b' } | Should -BeNullOrEmpty
@@ -151,7 +149,6 @@ Describe -Name 'Tool registry' -Fixture {
             $json | Should -BeLike '*"required":`["query"`]*'
         }
     }
-
     Context -Name 'invariants over every tool the module registers' -Fixture {
         BeforeAll {
             $script:published = InModuleScope -ModuleName $env:BHProjectName -ScriptBlock { @(Get-ToolList) }
