@@ -107,7 +107,7 @@ Where this server is intentionally stricter, the matrix asserts the difference r
 
 ## Test layout
 
-The harness discovers tests one folder below `Tests/`, named in lowercase: `Tests/<area>/*.tests.ps1`, and `*.tests.windows.ps1` for Windows-only tests.
+The harness discovers tests one folder below `Tests/`, named in lowercase: `Tests/<area>/*.tests.ps1`, and `*.tests.windows.ps1` for Windows-only tests. Each area folder holds the tests for one property, not one file per function, and private functions are tested directly through `InModuleScope` ([ADR 13](../adr/0013-tests-grouped-by-property.md)).
 
 - `Tests/Public/start-joplinmcpserver.tests.ps1`: the entry point, including `-ListTools` against `Tests/Registry/tools-list.golden.json`, in-process and as a real process.
 - `Tests/Registry/`: registration rules and registry invariants (`registry.tests.ps1`), and argument strictness (`arguments.tests.ps1`).

@@ -18,6 +18,7 @@ Every architecture decision for `JoplinMcp`, with its current status and how lat
 | [10](0010-adopt-pwsh-module-ci.md) | Build and test with `pwsh-module-ci` | Accepted — 2026-11-15 | Amended by [ADR 11](0011-test-on-linux-and-windows.md) |
 | [11](0011-test-on-linux-and-windows.md) | Test on Linux and Windows, not macOS | Accepted — 2026-11-23 | |
 | [12](0012-classes-in-one-file.md) | All classes in one file, loaded first | Accepted — 2026-11-23 | |
+| [13](0013-tests-grouped-by-property.md) | Tests grouped by the property they protect | Accepted — 2026-11-23 | |
 
 ## Supersessions and amendments
 
