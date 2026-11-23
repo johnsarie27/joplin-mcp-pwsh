@@ -6,8 +6,6 @@ BeforeDiscovery {
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
     }
-    $commonParameters = @([System.Management.Automation.PSCmdlet]::CommonParameters) + @([System.Management.Automation.PSCmdlet]::OptionalCommonParameters)
-    $commonParameterCases = $commonParameters.ForEach({ @{ Parameter = $_ } })
 }
 
 Describe -Name 'Tool registry' -Fixture {
@@ -103,7 +101,7 @@ Describe -Name 'Tool registry' -Fixture {
             $schema['required'] = @('missing')
             & $script:register @{ InputSchema = $schema } | Should -Not -BeNullOrEmpty
         }
-        It -Name 'rejects a schema property named like the common parameter <Parameter>' -ForEach $commonParameterCases -Test {
+        It -Name 'rejects a schema property named like the common parameter <Parameter>' -ForEach @([System.Management.Automation.PSCmdlet]::CommonParameters + [System.Management.Automation.PSCmdlet]::OptionalCommonParameters).ForEach({ @{ Parameter = $PSItem } }) -Test {
             $schema = & $script:validSchema
             $schema['properties'][$Parameter] = @{ type = 'string' }
             & $script:register @{ InputSchema = $schema } | Should -Not -BeNullOrEmpty

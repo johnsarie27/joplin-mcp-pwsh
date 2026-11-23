@@ -6,8 +6,6 @@ BeforeDiscovery {
     if (-not (Get-Module -Name $env:BHProjectName)) {
         Import-Module -Name $env:BHPSModuleManifest -ErrorAction Stop -Force
     }
-    $commonParameters = @([System.Management.Automation.PSCmdlet]::CommonParameters) + @([System.Management.Automation.PSCmdlet]::OptionalCommonParameters)
-    $commonParameterCases = $commonParameters.ForEach({ @{ Parameter = $_ } })
 }
 
 Describe -Name 'Argument strictness' -Fixture {
@@ -60,7 +58,7 @@ Describe -Name 'Argument strictness' -Fixture {
     ) -Test {
         (& $script:check $Value).Code | Should -Be -32602
     }
-    It -Name 'rejects the common parameter <Parameter> as an unknown property' -ForEach $commonParameterCases -Test {
+    It -Name 'rejects the common parameter <Parameter> as an unknown property' -ForEach @([System.Management.Automation.PSCmdlet]::CommonParameters + [System.Management.Automation.PSCmdlet]::OptionalCommonParameters).ForEach({ @{ Parameter = $PSItem } }) -Test {
         $result = & $script:check @{ query = 'tax'; $Parameter = 'Stop' }
         $result.Code | Should -Be -32602
         $result.Message | Should -BeLike '*unknown property*'

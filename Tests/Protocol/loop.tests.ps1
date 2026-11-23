@@ -204,7 +204,7 @@ Describe -Name 'Protocol loop' -Fixture {
             (& $script:run @('{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"zz_test_nullargs","arguments":null}}'))[0].error.code | Should -Be -32602
         }
         It -Name 'returns the handler''s value as text content with isError false' -Test {
-            & $script:addTool 'zz_test_value' { param($Arguments, $Access) 'echo: {0}' -f $Arguments['text'] }
+            & $script:addTool 'zz_test_value' { param($Arguments) 'echo: {0}' -f $Arguments['text'] }
             $result = (& $script:run @('{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"zz_test_value","arguments":{"text":"hi"}}}'))[0].result
             $result.isError | Should -BeFalse
             $result.content[0].type | Should -Be 'text'

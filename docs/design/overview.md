@@ -54,7 +54,7 @@ joplin-mcp-pwsh/
 └── .github/workflows/               # thin callers of the harness, plus the docs check
 ```
 
-One function per file, named after the function, as in the other modules. The root module dot-sources `Private/Classes/` first, then `Public/`, then `Private/`, each in name order. A class must be defined before a file uses it as a type in a parameter, which is why the classes sit apart, and a class file may only use classes that sort before it (`NotebookAccessError` extends `McpToolError`).
+One function per file, named after the function, as in the other modules. The root module dot-sources `Private/Classes/` first, then `Public/`, then `Private/`, each in name order. A class must be defined before a file uses it as a type in a parameter, which is why the classes sit apart, and a class file may only use classes that sort before it. A class and its base class share a file (`McpToolError` and `NotebookAccessError`), because PSScriptAnalyzer parses one file at a time and reports a base class in another file as `TypeNotFound`.
 
 Only the manifest, root module, `README.md`, `Public/` and `Private/` ship in the built module. Exported functions are commands for the person running the server; the MCP tools are never exported as PowerShell commands.
 
