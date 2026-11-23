@@ -27,7 +27,7 @@ jobs:
       # The floor is executed - min(floor(executed * 0.05), 10), read from the run's JUnit result
       # (pwsh-module-ci docs/test-integrity.md). Re-derive it in any PR that adds or removes tests: raise it when
       # tests are added, and lower it only when tests are deliberately deleted.
-      min-tests: 170 # 178 executed on each of ubuntu-latest and windows-latest at b96ea43 (0 disabled); 178 - min(floor(178 * 0.05), 10) = 170
+      min-tests: 193 # 203 executed by the harness's Test task after the schema, class-layout and entry-point fixes (0 disabled); 203 - min(floor(203 * 0.05), 10) = 193
     permissions:
       contents: read
       checks: write
