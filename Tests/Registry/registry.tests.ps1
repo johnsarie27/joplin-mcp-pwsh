@@ -101,6 +101,76 @@ Describe -Name 'Tool registry' -Fixture {
             $schema['required'] = @('missing')
             & $script:register @{ InputSchema = $schema } | Should -Not -BeNullOrEmpty
         }
+        It -Name 'accepts a schema that uses every supported keyword' -Test {
+            $schema = @{
+                type                 = 'object'
+                description          = 'Every supported keyword.'
+                properties           = @{
+                    text    = @{ type = 'string'; description = 'x'; pattern = '^a'; minLength = 1; maxLength = 9; enum = @('ab') }
+                    count   = @{ type = 'integer'; minimum = 1; maximum = 9; default = 5 }
+                    ratio   = @{ type = 'number'; minimum = 0; maximum = 1 }
+                    flag    = @{ type = 'boolean' }
+                    tags    = @{ type = 'array'; items = @{ type = 'string' } }
+                    options = @{ type = 'object'; properties = @{ deep = @{ type = 'string' } }; required = @('deep'); additionalProperties = $false }
+                }
+                required             = @('text')
+                additionalProperties = $false
+            }
+            & $script:register @{ InputSchema = $schema } | Should -BeNullOrEmpty
+        }
+        # A KEYWORD THE VALIDATOR DOES NOT ENFORCE WOULD BE PUBLISHED IN tools/list AS A CONSTRAINT THAT NOTHING CHECKS
+        It -Name 'rejects a property schema that uses <Case>' -ForEach @(
+            @{ Case = 'format'; Property = @{ type = 'string'; format = 'uuid' } }
+            @{ Case = 'oneOf'; Property = @{ type = 'string'; oneOf = @(@{ type = 'string' }) } }
+            @{ Case = 'a string keyword on an integer'; Property = @{ type = 'integer'; minLength = 1 } }
+            @{ Case = 'a keyword in the wrong case'; Property = @{ type = 'string'; MinLength = 1 } }
+            @{ Case = 'an unsupported keyword in array items'; Property = @{ type = 'array'; items = @{ type = 'string'; format = 'date' } } }
+        ) -Test {
+            $schema = & $script:validSchema
+            $schema['properties']['extra'] = $Property
+            & $script:register @{ InputSchema = $schema } | Should -BeLike '*not supported*'
+        }
+        It -Name 'rejects a default that does not satisfy its own schema: <Case>' -ForEach @(
+            @{ Case = 'above the maximum'; Property = @{ type = 'integer'; maximum = 100; default = 200 } }
+            @{ Case = 'the wrong type'; Property = @{ type = 'integer'; default = '20' } }
+            @{ Case = 'not in the enum'; Property = @{ type = 'string'; enum = @('a', 'b'); default = 'c' } }
+        ) -Test {
+            $schema = & $script:validSchema
+            $schema['properties']['extra'] = $Property
+            & $script:register @{ InputSchema = $schema } | Should -BeLike '*default does not satisfy*'
+        }
+        It -Name 'rejects an unsupported keyword at the top level of the schema' -Test {
+            $schema = & $script:validSchema
+            $schema['title'] = 'Not enforced'
+            & $script:register @{ InputSchema = $schema } | Should -BeLike '*not supported*'
+        }
+        It -Name 'rejects a property schema whose type is <Case>' -ForEach @(
+            @{ Case = 'missing'; Property = @{ description = 'no type' } }
+            @{ Case = 'a list of types'; Property = @{ type = @('string', 'null') } }
+            @{ Case = 'null'; Property = @{ type = 'null' } }
+            @{ Case = 'in the wrong case'; Property = @{ type = 'String' } }
+            @{ Case = 'not a schema at all'; Property = 'string' }
+        ) -Test {
+            $schema = & $script:validSchema
+            $schema['properties']['extra'] = $Property
+            & $script:register @{ InputSchema = $schema } | Should -Not -BeNullOrEmpty
+        }
+        It -Name 'rejects a nested object schema with <Case>' -ForEach @(
+            @{ Case = 'additionalProperties true'; Property = @{ type = 'object'; properties = @{}; additionalProperties = $true } }
+            @{ Case = 'additionalProperties missing'; Property = @{ type = 'object'; properties = @{} } }
+            @{ Case = 'an empty required array'; Property = @{ type = 'object'; properties = @{}; required = @(); additionalProperties = $false } }
+            @{ Case = 'an undeclared required name'; Property = @{ type = 'object'; properties = @{}; required = @('nope'); additionalProperties = $false } }
+            @{ Case = 'a bad grandchild'; Property = @{ type = 'object'; properties = @{ inner = @{ type = 'object'; properties = @{} } }; additionalProperties = $false } }
+        ) -Test {
+            $schema = & $script:validSchema
+            $schema['properties']['extra'] = $Property
+            & $script:register @{ InputSchema = $schema } | Should -Not -BeNullOrEmpty
+        }
+        It -Name 'names the path of the bad schema node in the error' -Test {
+            $schema = & $script:validSchema
+            $schema['properties']['extra'] = @{ type = 'array'; items = @{ type = 'string'; format = 'date' } }
+            & $script:register @{ InputSchema = $schema } | Should -BeLike '*inputSchema.properties.extra.items*'
+        }
         It -Name 'rejects a schema property named like the common parameter <Parameter>' -ForEach @([System.Management.Automation.PSCmdlet]::CommonParameters + [System.Management.Automation.PSCmdlet]::OptionalCommonParameters).ForEach({ @{ Parameter = $PSItem } }) -Test {
             $schema = & $script:validSchema
             $schema['properties'][$Parameter] = @{ type = 'string' }
