@@ -122,7 +122,7 @@ The harness adds its own shared tests to every run (manifest, file encoding, pat
 
 CI comes from the shared harness, `jjohns-dev/pwsh-module-ci` `@v2` ([ADR 10](../adr/0010-adopt-pwsh-module-ci.md)):
 
-- **`ci`:** stages the module, runs PSScriptAnalyzer (fails on Error and Warning) and Pester on Linux, macOS and Windows, then verifies the JUnit result: no result file, any error at the root, or zero tests fails the run. Set a `min-tests` floor once the suite exists, and raise it as the suite grows.
+- **`ci`:** stages the module, runs PSScriptAnalyzer (fails on Error and Warning) and Pester on Linux and Windows ([ADR 11](../adr/0011-test-on-linux-and-windows.md)), then verifies the JUnit result: no result file, any error at the root, or zero tests fails the run. Set a `min-tests` floor once the suite exists, and raise it as the suite grows.
 - **`pssa-sarif`:** analyzer findings for the whole repository in the Security tab.
 - **`release`:** builds the module archive; on a pull request, runs everything except publishing.
 - **`docs`** (this repository): `Build/Test-DocLinks.ps1`, the broken-link check.

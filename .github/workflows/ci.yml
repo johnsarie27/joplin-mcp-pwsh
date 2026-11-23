@@ -21,9 +21,13 @@ jobs:
     # delivers centralized Action bumps through the tag (ADR 10). Third-party Actions in this repository stay
     # SHA-pinned. A reusable-workflow call takes no timeout-minutes; the harness sets its own.
     uses: jjohns-dev/pwsh-module-ci/.github/workflows/ci.yml@v2
-    # No os-matrix: the harness default runs Linux, macOS and Windows.
-    # min-tests is set after the first green run, from the executed count in the run's JUnit artifact
-    # (pwsh-module-ci docs/test-integrity.md): executed - min(floor(executed * 0.05), 10).
+    with:
+      # Linux and Windows only; macOS is deliberately not tested (ADR 11).
+      os-matrix: '["ubuntu-latest", "windows-latest"]'
+      # The floor is executed - min(floor(executed * 0.05), 10), read from the run's JUnit result
+      # (pwsh-module-ci docs/test-integrity.md). Re-derive it in any PR that adds or removes tests: raise it when
+      # tests are added, and lower it only when tests are deliberately deleted.
+      min-tests: 170 # 178 executed on each of ubuntu-latest and windows-latest at b96ea43 (0 disabled); 178 - min(floor(178 * 0.05), 10) = 170
     permissions:
       contents: read
       checks: write

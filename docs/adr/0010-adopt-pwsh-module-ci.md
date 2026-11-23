@@ -4,6 +4,13 @@
 
 Accepted — 2026-11-15
 
+Amended by [ADR-0011](0011-test-on-linux-and-windows.md) — 2026-11-23. Two statements below are now inaccurate and are left in place:
+
+- The Context bullet saying the test plan needs "Pester on Linux, macOS and Windows". CI now runs Linux and Windows only.
+- The Context bullet about the runner matrix and the macOS 15 arm64 image's PowerShell 7.6.9. macOS is no longer in the matrix, so that image is no longer tested; the Linux and Windows figures still hold.
+
+Everything else in this record still stands, including the decision to adopt the harness.
+
 ## Context
 
 - The test plan ([testing.md](../design/testing.md)) needs PSScriptAnalyzer, Pester on Linux, macOS and Windows, and GitHub Actions pinned by commit SHA.
