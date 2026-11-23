@@ -107,11 +107,14 @@ Where this server is intentionally stricter, the matrix asserts the difference r
 
 ## Test layout
 
-The harness discovers tests one folder below `Tests/`, named in lowercase: `Tests/<area>/*.tests.ps1`, and `*.tests.windows.ps1` for Windows-only tests.
+The harness discovers tests one folder below `Tests/`, named in lowercase: `Tests/<area>/*.tests.ps1`, and `*.tests.windows.ps1` for Windows-only tests. Each area folder holds the tests for one property, not one file per function, and private functions are tested directly through `InModuleScope` ([ADR 13](../adr/0013-tests-grouped-by-property.md)).
 
-- `Tests/Private/<function>.tests.ps1`: one file per private function.
-- `Tests/Public/start-joplinmcpserver.tests.ps1`: the entry point, including `-ListTools` against the golden file.
-- `Tests/Registry/`, `Tests/Protocol/`, `Tests/Access/`: the registry, protocol, access-layer and information-hiding suites above.
+- `Tests/Public/start-joplinmcpserver.tests.ps1`: the entry point, including `-ListTools` against `Tests/Registry/tools-list.golden.json`, in-process and as a real process.
+- `Tests/Registry/`: registration rules and registry invariants (`registry.tests.ps1`), and argument strictness (`arguments.tests.ps1`).
+- `Tests/Protocol/`: the loop and dispatcher run in-process against a `StringReader` and `StringWriter` (`loop.tests.ps1`), and the stdout-isolation and secrets checks, which run the server as a real `pwsh` process because only a real process shows what reaches stdout (`stdout-isolation.tests.ps1`).
+- `Tests/Access/`: the access-layer and information-hiding suites above, when that layer is built.
+
+The stdout-isolation suite asserts that each stray write is tagged on stderr with its record type (`[diag:WarningRecord] ...`), not only that stdout is clean. `[Console]::SetOut` alone keeps stdout clean, so a stdout-only check would pass with `Invoke-HandlerIsolated`'s stream merge removed.
 
 The harness adds its own shared tests to every run (manifest, file encoding, path literals), so this repository does not keep copies of them.
 
@@ -119,7 +122,7 @@ The harness adds its own shared tests to every run (manifest, file encoding, pat
 
 CI comes from the shared harness, `jjohns-dev/pwsh-module-ci` `@v2` ([ADR 10](../adr/0010-adopt-pwsh-module-ci.md)):
 
-- **`ci`:** stages the module, runs PSScriptAnalyzer (fails on Error and Warning) and Pester on Linux, macOS and Windows, then verifies the JUnit result: no result file, any error at the root, or zero tests fails the run. Set a `min-tests` floor once the suite exists, and raise it as the suite grows.
+- **`ci`:** stages the module, runs PSScriptAnalyzer (fails on Error and Warning) and Pester on Linux and Windows ([ADR 11](../adr/0011-test-on-linux-and-windows.md)), then verifies the JUnit result: no result file, any error at the root, or zero tests fails the run. Set a `min-tests` floor once the suite exists, and raise it as the suite grows.
 - **`pssa-sarif`:** analyzer findings for the whole repository in the Security tab.
 - **`release`:** builds the module archive; on a pull request, runs everything except publishing.
 - **`docs`** (this repository): `Build/Test-DocLinks.ps1`, the broken-link check.

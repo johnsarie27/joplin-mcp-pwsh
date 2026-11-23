@@ -36,6 +36,17 @@ Registration rules:
 - `Access` is one of `Read`, `Write`, `CreateNotebook`, `ManageTags`. A tool without it fails registration. It may be declared as a parameter (above) or as an attribute on the handler function, in the style of pwsh.mcp's `[Annotations()]`.
 - `Access` drives the MCP `readOnlyHint` annotation (`Read` is read-only).
 - Every schema sets `additionalProperties: false`; ids use the pattern `^[0-9a-f]{32}$`; no empty `required` array is emitted.
+- A schema uses only the keywords `Test-ToolArgument` enforces, so `tools/list` never publishes a constraint the server does not check. Every node declares one `type` as a string, and these apply at every level, not just the top:
+
+  | `type` | Keywords besides `type`, `description`, `default` and `enum` |
+  |---|---|
+  | `object` | `properties`, `required`, `additionalProperties` (must be `false`) |
+  | `array` | `items` |
+  | `string` | `pattern`, `minLength`, `maxLength` |
+  | `integer`, `number` | `minimum`, `maximum` |
+  | `boolean` | none |
+
+  `description` and `default` are annotations. A `default` must satisfy its own node's schema, and the handler applies it (as `$Arguments.limit ?? 20` does above); the dispatcher fills in nothing. Anything else, such as `format`, `oneOf` or a list of types, fails registration (`Test-ToolSchema`).
 - A description is mandatory and must be of useful length; registration never falls back to the tool name. Descriptions of tools that filter by access carry the static scope statement ([access-control.md](access-control.md#information-hiding)).
 - Handlers return exactly one value, normally a formatted string.
 
@@ -83,7 +94,7 @@ The registry serializes each entry to the MCP tool shape (`name`, `description`,
 }
 ```
 
-**Schema snapshot.** `Start-JoplinMcpServer -ListTools` prints the `tools/list` JSON and exits without starting the loop (the idea comes from pwsh.mcp's `-WhatIf` dry run). A golden-file test compares that output, so any change to a published tool schema shows up in review.
+**Schema snapshot.** `Start-JoplinMcpServer -ListTools` prints the `result` object of `tools/list`, `{"tools":[...]}` as compact JSON, and exits without starting the loop (the idea comes from pwsh.mcp's `-WhatIf` dry run). Tools are ordered by name and schema keys are sorted, so the output is the same on every run. A golden-file test, `Tests/Registry/tools-list.golden.json`, compares that output, so any change to a published tool schema shows up in review.
 
 ## Inventory
 

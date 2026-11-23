@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository. It covers rules that a
 
 ## Project
 
-`JoplinMcp`: a Joplin MCP server in PowerShell 7.6+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
+`JoplinMcp`: a Joplin MCP server in PowerShell 7.6+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The module scaffold is in place (manifest, protocol loop, tool registry, CI) but there are no tools yet, and config loading, the access layer and the Joplin client are not built; the design is in `docs/`. Start with [docs/README.md](docs/README.md).
 
 ## Design docs and ADRs are the source of truth
 
@@ -30,6 +30,8 @@ Each is explained in the linked document; these are the ones a small, reasonable
 - **Every tool declares `Access`** (`Read`, `Write`, `CreateNotebook` or `ManageTags`) and does per-note checks through `Get-AccessibleNote` / `Select-ReadableNotes`, never by fetching and filtering itself. ([security-model.md](docs/design/security-model.md#structural-enforcement), [tools.md](docs/design/tools.md))
 - **Invoke the registered scriptblock, never a command name**, and never splat client-supplied keys. ([security-model.md](docs/design/security-model.md#powershell-specific-hardening))
 - **Hidden looks like missing.** No response may vary with content the caller cannot see: no counts, hints or distinct errors. ([access-control.md](docs/design/access-control.md#information-hiding))
+- **No `throw`.** Raise errors with `Write-Error -Exception <typed exception> -ErrorAction Stop`, which keeps the exception type and its `Code`, so a typed `catch` still matches. One function per file, named after it; every class and enum goes in `Private/Classes.ps1`, which loads first ([ADR 12](docs/adr/0012-classes-in-one-file.md)).
+- **Tests go in the area folder for the property they protect** (`Tests/Registry/`, `Tests/Protocol/`, ...), not `Tests/Unit/<function>.tests.ps1` as in other modules and the house PowerShell standard; private functions are tested through `InModuleScope`. ([ADR 13](docs/adr/0013-tests-grouped-by-property.md))
 - **Only `Invoke-JoplinApi` touches the token**, and no error message carries a raw exception or URL.
 - **PowerShell 7.6 is the floor.** Don't use features from later versions. ([ADR 8](docs/adr/0008-powershell-7-6-floor.md))
 

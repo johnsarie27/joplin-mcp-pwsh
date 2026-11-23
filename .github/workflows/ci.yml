@@ -1,0 +1,33 @@
+name: ci
+run-name: ci
+
+on:
+  pull_request:
+    branches: ["*"]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Nothing by default; the job below asks for exactly what the harness needs.
+permissions: {}
+
+jobs:
+  validate:
+    # The harness is pinned by its moving major tag, not a SHA, on purpose: it is maintained by the same person and
+    # delivers centralized Action bumps through the tag (ADR 10). Third-party Actions in this repository stay
+    # SHA-pinned. A reusable-workflow call takes no timeout-minutes; the harness sets its own.
+    uses: jjohns-dev/pwsh-module-ci/.github/workflows/ci.yml@v2
+    with:
+      # Linux and Windows only; macOS is deliberately not tested (ADR 11).
+      os-matrix: '["ubuntu-latest", "windows-latest"]'
+      # The floor is executed - min(floor(executed * 0.05), 10), read from the run's JUnit result
+      # (pwsh-module-ci docs/test-integrity.md). Re-derive it in any PR that adds or removes tests: raise it when
+      # tests are added, and lower it only when tests are deliberately deleted.
+      min-tests: 193 # 203 executed by the harness's Test task after the schema, class-layout and entry-point fixes (0 disabled); 203 - min(floor(203 * 0.05), 10) = 193
+    permissions:
+      contents: read
+      checks: write

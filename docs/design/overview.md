@@ -42,16 +42,19 @@ joplin-mcp-pwsh/
 ├── Public/
 │   └── Start-JoplinMcpServer.ps1     # the server entry point; -ListTools prints the tool schemas and exits
 ├── Private/
-│   ├── Config.ps1                   # Import-JoplinConfig + validation
-│   ├── Access.ps1                   # [NotebookAccess], Resolve-NotebookAccess, Get-AccessibleNote, Select-ReadableNotes
-│   ├── Client.ps1                   # Invoke-JoplinApi (token handling, error scrubbing, ID validation)
-│   ├── Protocol.ps1                 # stdio loop, JSON-RPC routing, response writer
-│   ├── Registry.ps1                 # Register-JoplinTool, schema validation
-│   └── Tools/                       # one file per tool, each calls Register-JoplinTool
+│   ├── Classes.ps1                  # every class and enum: [JoplinToolAccess], [NotebookAccess], the error types; loaded first
+│   ├── Import-JoplinConfig.ps1      # config loading + validation (to come)
+│   ├── Resolve-NotebookAccess.ps1   # builds [NotebookAccess]; Get-AccessibleNote and Select-ReadableNotes sit beside it (to come)
+│   ├── Invoke-JoplinApi.ps1         # token handling, error scrubbing, ID validation (to come)
+│   ├── Invoke-McpLoop.ps1           # stdio loop; Invoke-McpLine, Invoke-ToolCall, Invoke-HandlerIsolated, Write-Mcp*, ConvertTo-McpJson
+│   ├── Register-JoplinTool.ps1      # tool registry; Test-ToolArgument, Get-ToolList beside it
+│   └── Tools/                       # one file per tool, each calls Register-JoplinTool (to come)
 ├── Tests/<area>/*.tests.ps1         # Pester; see testing.md
 ├── Build/build.ps1                  # harness shim for local builds (copied from the harness template)
 └── .github/workflows/               # thin callers of the harness, plus the docs check
 ```
+
+One function per file, named after the function, as in the other modules. Every class and enum is in `Private/Classes.ps1`, which the root module dot-sources first, by name; then it loads `Public/` and the rest of `Private/` in name order. A class must be defined before a file uses it as a type in a parameter, and within one file only a base class has to come before the classes that extend it ([ADR 12](../adr/0012-classes-in-one-file.md)).
 
 Only the manifest, root module, `README.md`, `Public/` and `Private/` ship in the built module. Exported functions are commands for the person running the server; the MCP tools are never exported as PowerShell commands.
 

@@ -15,7 +15,10 @@ Every architecture decision for `JoplinMcp`, with its current status and how lat
 | [7](0007-thin-core-no-framework.md) | Thin core instead of an MCP framework | Accepted — 2026-11-15 | Amended by [ADR 8](0008-powershell-7-6-floor.md) |
 | [8](0008-powershell-7-6-floor.md) | PowerShell 7.6 as the minimum version | Accepted — 2026-11-15 | |
 | [9](0009-module-with-exported-entry-point.md) | A module with an exported server entry point | Accepted — 2026-11-15 | |
-| [10](0010-adopt-pwsh-module-ci.md) | Build and test with `pwsh-module-ci` | Accepted — 2026-11-15 | |
+| [10](0010-adopt-pwsh-module-ci.md) | Build and test with `pwsh-module-ci` | Accepted — 2026-11-15 | Amended by [ADR 11](0011-test-on-linux-and-windows.md) |
+| [11](0011-test-on-linux-and-windows.md) | Test on Linux and Windows, not macOS | Accepted — 2026-11-23 | |
+| [12](0012-classes-in-one-file.md) | All classes in one file, loaded first | Accepted — 2026-11-23 | |
+| [13](0013-tests-grouped-by-property.md) | Tests grouped by the property they protect | Accepted — 2026-11-23 | |
 
 ## Supersessions and amendments
 
@@ -25,6 +28,7 @@ A superseded ADR is no longer in force; an amended one still is, except for the 
 |---|---|---|---|
 | [ADR 4](0004-name-resolution-and-paths.md) | Amends | [ADR 1](0001-opt-in-descendant-inheritance.md) | An ambiguous grant name no longer applies `descendants` to every match; it grants nothing. |
 | [ADR 8](0008-powershell-7-6-floor.md) | Amends | [ADR 7](0007-thin-core-no-framework.md) | The PowerShell floor is 7.6, not 7.4; ADR 7's decision stands on its other reasons. |
+| [ADR 11](0011-test-on-linux-and-windows.md) | Amends | [ADR 10](0010-adopt-pwsh-module-ci.md) | CI runs Linux and Windows, not macOS; ADR 10's decision to adopt the harness stands. |
 
 No ADR has been superseded or deprecated.
 

@@ -4,6 +4,8 @@ The stdio JSON-RPC loop, how a `tools/call` reaches a handler, and the error con
 
 ## Sketch
 
+The sketch is the design, not the code: the implementation splits it into one function per file and raises errors with `Write-Error -Exception ... -ErrorAction Stop` rather than `throw`, as the notes below say.
+
 ```powershell
 function Start-McpLoop {
     $stdin  = [System.IO.StreamReader]::new([Console]::OpenStandardInput(),  [System.Text.UTF8Encoding]::new($false))
@@ -26,7 +28,7 @@ function Start-McpLoop {
                 'ping'                      { @{} }
                 'tools/list'                { @{ tools = Get-ToolList } }
                 'tools/call'                { Invoke-ToolCall $msg.params }
-                default                     { throw [McpProtocolError]::new(-32601, "Method not found: $($msg.method)") }
+                default                     { Write-Error -Exception ([McpProtocolError]::new(-32601, "Method not found: $($msg.method)")) -ErrorAction Stop }
             }
             if ($hasId) { Write-McpResult $stdout $msg.id $result }
         }
@@ -43,21 +45,21 @@ function Start-McpLoop {
 
 function Invoke-ToolCall([hashtable] $params) {
     $tool = $script:ToolRegistry[$params.name]
-    if (-not $tool) { throw [McpProtocolError]::new(-32602, "Unknown tool: $($params.name)") }
+    if (-not $tool) { Write-Error -Exception ([McpProtocolError]::new(-32602, 'Unknown tool.')) -ErrorAction Stop }
 
     $arguments = $params.arguments ?? @{}
-    Test-ToolArguments -Schema $tool.InputSchema -Arguments $arguments   # throws -32602: non-object arguments, unknown or common parameters, wrong JSON types (booleans never coerced)
+    Test-ToolArgument -Schema $tool.InputSchema -Arguments $arguments   # throws -32602: non-object arguments, unknown or common parameters, wrong JSON types (booleans never coerced)
 
     try {
         $access = Resolve-NotebookAccess                 # re-reads config, resolves names live
         switch ($tool.Access) {
             { $_ -in 'Read', 'Write' } {
                 if (-not $access.HasAnyAccess()) {
-                    throw [NotebookAccessError]::new('No notebooks are configured for access. Add a `notebooks` list to the config file.')
+                    Write-Error -Exception ([NotebookAccessError]::new('No notebooks are configured for access. Add a `notebooks` list to the config file.')) -ErrorAction Stop
                 }
             }
             'ManageTags' {
-                if (-not $access.CanManageTags()) { throw [NotebookAccessError]::new('Tag management is not permitted by the configured access.') }
+                if (-not $access.CanManageTags()) { Write-Error -Exception ([NotebookAccessError]::new('Tag management is not permitted by the configured access.')) -ErrorAction Stop }
             }
             # 'CreateNotebook' is checked in the handler: CanWrite($parent_id) or CanCreateRootNotebook().
         }
@@ -84,7 +86,7 @@ function Invoke-HandlerIsolated($Handler, $Arguments, $Access) {
             [Console]::Error.WriteLine("[diag:$($item.GetType().Name)] $item")   # diagnostics -> stderr
         } else { $item }
     }
-    if (@($out).Count -ne 1) { throw 'Handler must return exactly one value.' }
+    if (@($out).Count -ne 1) { Write-Error -Exception ([System.InvalidOperationException]::new('Handler must return exactly one value.')) -ErrorAction Stop }
     $out
 }
 ```
@@ -116,10 +118,13 @@ These come from defects observed in the [evaluated frameworks](../research/frame
 
 Further rules:
 
+- A message is a valid request only if `jsonrpc` is the string `"2.0"` (a number is not enough), `method` is a string, and `id`, when present, is a string or a number. A JSON array (a batch) is `-32600`. A message with `result` or `error` and no `method` is a client response, which the server has no use for, so it is ignored rather than answered.
+- A method name is matched case-sensitively, and a tool name by exact ordinal match in the registry.
 - Every serialized error `code` is an integer.
 - `ping` returns `{}`.
-- Use a typed `[McpProtocolError]` with a `Code` to map failures to JSON-RPC codes, and a typed response envelope. Never infer an envelope by duck-typing a handler result (a result with a `result` or `error` property is not an envelope).
-- Results that are not strings are serialized with an explicit `-Depth` and fail loudly if anything would be truncated; never `System.Collections.Hashtable` strings.
+- Raise errors with `Write-Error -Exception <typed exception> -ErrorAction Stop`, never `throw` (the coding standard); a typed `catch [McpProtocolError]` still matches, and the exception keeps its `Code`. Use a typed `[McpProtocolError]` with a `Code` to map failures to JSON-RPC codes, and a typed response envelope. Never infer an envelope by duck-typing a handler result (a result with a `result` or `error` property is not an envelope).
+- Results that are not strings are serialized with an explicit `-Depth` and fail loudly if anything would be truncated; never `System.Collections.Hashtable` strings. `ConvertTo-McpJson` is the one serializer: it captures `ConvertTo-Json`'s truncation warning, which would otherwise print next to the protocol, and raises an error instead.
+- The function is `Test-ToolArgument`, not `Test-ToolArguments`: PSScriptAnalyzer's `PSUseSingularNouns` is a warning and the build fails on warnings.
 
 ## Initialization
 
