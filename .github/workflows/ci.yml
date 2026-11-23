@@ -1,0 +1,22 @@
+name: ci
+run-name: ci
+
+on:
+  pull_request:
+    branches: ["*"]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    uses: jjohns-dev/pwsh-module-ci/.github/workflows/ci.yml@v2
+    # No os-matrix: the harness default runs Linux, macOS and Windows.
+    # min-tests is set after the first green run, from the executed count in the run's JUnit artifact
+    # (pwsh-module-ci docs/test-integrity.md): executed - min(floor(executed * 0.05), 10).
+    permissions:
+      contents: read
+      checks: write

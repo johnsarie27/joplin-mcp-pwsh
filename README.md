@@ -12,7 +12,7 @@ It is the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](htt
 
 ## Status
 
-**Design phase. There is no working server yet.** The design is complete and recorded in [`docs/`](docs/README.md); implementation is tracked in [issue #1](https://github.com/johnsarie27/joplin-mcp-pwsh/issues/1). Until a release exists, use the [Python server](https://github.com/johnsarie27/joplin-mcp).
+**Early development. The server starts and speaks MCP, but it has no tools yet.** The module scaffold, protocol loop, tool registry and CI are in place. Config loading, the access layer, the Joplin client and the tools are still to come; the design is recorded in [`docs/`](docs/README.md) and the work is tracked in [issue #1](https://github.com/johnsarie27/joplin-mcp-pwsh/issues/1). Until a release exists, use the [Python server](https://github.com/johnsarie27/joplin-mcp).
 
 ## Documentation
 

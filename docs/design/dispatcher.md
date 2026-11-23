@@ -46,7 +46,7 @@ function Invoke-ToolCall([hashtable] $params) {
     if (-not $tool) { throw [McpProtocolError]::new(-32602, "Unknown tool: $($params.name)") }
 
     $arguments = $params.arguments ?? @{}
-    Test-ToolArguments -Schema $tool.InputSchema -Arguments $arguments   # throws -32602: non-object arguments, unknown or common parameters, wrong JSON types (booleans never coerced)
+    Test-ToolArgument -Schema $tool.InputSchema -Arguments $arguments   # throws -32602: non-object arguments, unknown or common parameters, wrong JSON types (booleans never coerced)
 
     try {
         $access = Resolve-NotebookAccess                 # re-reads config, resolves names live
@@ -116,10 +116,13 @@ These come from defects observed in the [evaluated frameworks](../research/frame
 
 Further rules:
 
+- A message is a valid request only if `jsonrpc` is the string `"2.0"` (a number is not enough), `method` is a string, and `id`, when present, is a string or a number. A JSON array (a batch) is `-32600`. A message with `result` or `error` and no `method` is a client response, which the server has no use for, so it is ignored rather than answered.
+- A method name is matched case-sensitively, and a tool name by exact ordinal match in the registry.
 - Every serialized error `code` is an integer.
 - `ping` returns `{}`.
 - Use a typed `[McpProtocolError]` with a `Code` to map failures to JSON-RPC codes, and a typed response envelope. Never infer an envelope by duck-typing a handler result (a result with a `result` or `error` property is not an envelope).
-- Results that are not strings are serialized with an explicit `-Depth` and fail loudly if anything would be truncated; never `System.Collections.Hashtable` strings.
+- Results that are not strings are serialized with an explicit `-Depth` and fail loudly if anything would be truncated; never `System.Collections.Hashtable` strings. `ConvertTo-McpJson` is the one serializer: it captures `ConvertTo-Json`'s truncation warning, which would otherwise print next to the protocol, and throws instead.
+- The function is `Test-ToolArgument`, not `Test-ToolArguments`: PSScriptAnalyzer's `PSUseSingularNouns` is a warning and the build fails on warnings.
 
 ## Initialization
 

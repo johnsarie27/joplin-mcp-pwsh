@@ -109,9 +109,12 @@ Where this server is intentionally stricter, the matrix asserts the difference r
 
 The harness discovers tests one folder below `Tests/`, named in lowercase: `Tests/<area>/*.tests.ps1`, and `*.tests.windows.ps1` for Windows-only tests.
 
-- `Tests/Private/<function>.tests.ps1`: one file per private function.
-- `Tests/Public/start-joplinmcpserver.tests.ps1`: the entry point, including `-ListTools` against the golden file.
-- `Tests/Registry/`, `Tests/Protocol/`, `Tests/Access/`: the registry, protocol, access-layer and information-hiding suites above.
+- `Tests/Public/start-joplinmcpserver.tests.ps1`: the entry point, including `-ListTools` against `Tests/Registry/tools-list.golden.json`, in-process and as a real process.
+- `Tests/Registry/`: registration rules and registry invariants (`registry.tests.ps1`), and argument strictness (`arguments.tests.ps1`).
+- `Tests/Protocol/`: the loop and dispatcher run in-process against a `StringReader` and `StringWriter` (`loop.tests.ps1`), and the stdout-isolation and secrets checks, which run the server as a real `pwsh` process because only a real process shows what reaches stdout (`stdout-isolation.tests.ps1`).
+- `Tests/Access/`: the access-layer and information-hiding suites above, when that layer is built.
+
+The stdout-isolation suite asserts that each stray write is tagged on stderr with its record type (`[diag:WarningRecord] ...`), not only that stdout is clean. `[Console]::SetOut` alone keeps stdout clean, so a stdout-only check would pass with `Invoke-HandlerIsolated`'s stream merge removed.
 
 The harness adds its own shared tests to every run (manifest, file encoding, path literals), so this repository does not keep copies of them.
 

@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository. It covers rules that a
 
 ## Project
 
-`JoplinMcp`: a Joplin MCP server in PowerShell 7.6+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The repository is in the design phase; there is no implementation yet. Start with [docs/README.md](docs/README.md).
+`JoplinMcp`: a Joplin MCP server in PowerShell 7.6+ with per-notebook access control, the PowerShell sibling of the Python server [`johnsarie27/joplin-mcp`](https://github.com/johnsarie27/joplin-mcp). The module scaffold is in place (manifest, protocol loop, tool registry, CI) but there are no tools yet, and config loading, the access layer and the Joplin client are not built; the design is in `docs/`. Start with [docs/README.md](docs/README.md).
 
 ## Design docs and ADRs are the source of truth
 

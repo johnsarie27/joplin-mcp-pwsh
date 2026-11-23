@@ -1,0 +1,13 @@
+{
+  "token": "paste-your-web-clipper-token-here",
+  "host": "localhost",
+  "port": "41184",
+  "notebooks": [
+    { "id": "Work",                             "access": "write", "descendants": true },
+    { "id": "Personal/Tech",                    "access": "read" },
+    { "id": "0123456789abcdef0123456789abcdef", "access": "read" },
+    { "id": "Personal/Taxes",                   "access": "none" },
+    { "id": "$root",                            "access": "write" },
+    { "id": "$tags",                            "access": "write" }
+  ]
+}

@@ -83,7 +83,7 @@ The registry serializes each entry to the MCP tool shape (`name`, `description`,
 }
 ```
 
-**Schema snapshot.** `Start-JoplinMcpServer -ListTools` prints the `tools/list` JSON and exits without starting the loop (the idea comes from pwsh.mcp's `-WhatIf` dry run). A golden-file test compares that output, so any change to a published tool schema shows up in review.
+**Schema snapshot.** `Start-JoplinMcpServer -ListTools` prints the `result` object of `tools/list`, `{"tools":[...]}` as compact JSON, and exits without starting the loop (the idea comes from pwsh.mcp's `-WhatIf` dry run). Tools are ordered by name and schema keys are sorted, so the output is the same on every run. A golden-file test, `Tests/Registry/tools-list.golden.json`, compares that output, so any change to a published tool schema shows up in review.
 
 ## Inventory
 
