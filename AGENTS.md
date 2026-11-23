@@ -47,6 +47,6 @@ Each is explained in the linked document; these are the ones a small, reasonable
 - **Before merging any PR, ask the maintainer whether they want to review it first, and wait for the answer.** There is no rule for which PRs they review; they decide each time. Merge only once they approve it or tell you to go ahead. Opening a PR, or a green check, is not approval.
 - Merge with squash (`gh pr merge <n> --squash --delete-branch`). The squash commit takes the PR title, and the head branch is deleted on merge.
 - The ruleset requires the branch to be up to date with `main`. If `main` has moved, update the branch (`gh api -X PUT repos/johnsarie27/joplin-mcp-pwsh/pulls/<n>/update-branch`) and wait for the checks to pass again before merging.
-- Required checks: `docs` today; the build harness's checks are added once they exist ([testing.md](docs/design/testing.md#ci)).
-- When a PR closes one of the task issues listed on issue #1, tick its box there by hand; GitHub does not tick it automatically.
+- Required checks: `docs` and the build harness's checks, listed in [testing.md](docs/design/testing.md#ci).
+- Every task issue is a sub-issue of issue #1, in working order. Link a new task issue there (`POST repos/johnsarie27/joplin-mcp-pwsh/issues/1/sub_issues` with the issue's numeric `id`, not its number); the sub-issue panel tracks open and closed by itself.
 - Write issue and PR bodies to a file and pass `--body-file`, then read the body back to check it. Interpolating a body inline has dropped `$root` / `$tags` and collapsed line breaks before.

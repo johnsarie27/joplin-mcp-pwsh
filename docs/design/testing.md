@@ -128,7 +128,7 @@ CI comes from the shared harness, `jjohns-dev/pwsh-module-ci` `@v2` ([ADR 10](..
 - **`docs`** (this repository): `Build/Test-DocLinks.ps1`, the broken-link check.
 - **PowerShell version:** each runner's installed PowerShell, which must be at least 7.6, the floor ([ADR 8](../adr/0008-powershell-7-6-floor.md)). The runner images listed 7.6.9–7.6.10 when checked on 2026-11-15, and the harness's manifest test fails on any runner older than the manifest's `PowerShellVersion`.
 - **Pinning:** third-party Actions by commit SHA; the harness by its `@v2` major tag (the one exception).
-- **Required checks:** the `protect` ruleset requires `docs` today; add the harness's checks once they have run and their names exist.
+- **Required checks:** the `protect` ruleset requires `docs` and the harness's `validate / normalize matrix`, `validate / validate (ubuntu-latest)`, `validate / validate (windows-latest)`, `analyze / PSScriptAnalyzer` and `release / release`.
 
 Run the same build locally with the shim: `./Build/build.ps1 -ResolveDependency -TaskList Init`, then `./Build/build.ps1 -TaskList CombineFunctionsAndStage, Analyze, Test`.
 
