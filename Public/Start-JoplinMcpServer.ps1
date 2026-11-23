@@ -34,16 +34,35 @@ function Start-JoplinMcpServer {
         [System.Management.Automation.SwitchParameter] $ListTools
     )
     Begin {
-        # DEVIATES FROM OPENING WITH Write-Verbose: THIS FUNCTION OWNS THE PROTOCOL STREAM, SO Console.Out MOVES TO STDERR
-        # FIRST. OTHERWISE A CALLER'S -Verbose WOULD PUT THE LINE BELOW ON STDOUT, NEXT TO THE PROTOCOL
+        # DEVIATES FROM OPENING WITH Write-Verbose: THIS FUNCTION OWNS STDOUT, SO A CALLER'S -Verbose MUST NOT PUT A LINE
+        # THERE. THE SERVER MOVES Console.Out TO STDERR FIRST; -ListTools CAPTURES ITS OWN STREAMS IN THE PROCESS BLOCK
+        # INSTEAD, BECAUSE ITS JSON IS PIPELINE OUTPUT THAT THE HOST WRITES TO Console.Out. THE CLEAN BLOCK PUTS BOTH
+        # SETTINGS BACK
+        $originalOut = [System.Console]::Out
+        $originalRendering = $PSStyle.OutputRendering
         if (-not $ListTools) {
             [System.Console]::SetOut([System.Console]::Error)
+            Write-Verbose -Message ('Starting {0}' -f $MyInvocation.MyCommand)
         }
-        Write-Verbose -Message ('Starting {0}' -f $MyInvocation.MyCommand)
     }
     Process {
         if ($ListTools) {
-            ConvertTo-McpJson -InputObject ([ordered]@{ tools = @(Get-ToolList) })
+            # NOT [Console]::SetOut: THE HOST KEEPS THE WRITER IT FIRST WRITES THROUGH, SO A VERBOSE LINE WRITTEN WHILE
+            # STDOUT WAS MOVED WOULD TAKE THE JSON TO STDERR WITH IT. ONLY THE JSON STRING IS OUTPUT; ANY OTHER RECORD IS STDERR
+            # CAPTURED HERE: INSIDE THE SCRIPT BLOCK $MyInvocation IS THE BLOCK, NOT THIS FUNCTION
+            $commandName = $MyInvocation.MyCommand.Name
+            $items = & {
+                Write-Verbose -Message ('Starting {0}' -f $commandName)
+                ConvertTo-McpJson -InputObject ([ordered]@{ tools = @(Get-ToolList) })
+            } *>&1
+            foreach ($item in $items) {
+                if ($item -is [System.String]) {
+                    $item
+                }
+                else {
+                    [System.Console]::Error.WriteLine(('[diag:{0}] {1}' -f $item.GetType().Name, $item))
+                }
+            }
         }
         else {
             # UTF-8 WITHOUT A BYTE ORDER MARK, ON BOTH ENDS. [System.Text.Encoding]::UTF8 WOULD WRITE A BOM
@@ -68,6 +87,17 @@ function Start-JoplinMcpServer {
             finally {
                 $writer.Flush()
             }
+        }
+    }
+    Clean {
+        # RUNS HOWEVER THE FUNCTION ENDS: END OF INPUT, AN ERROR OR CTRL+C. Console.Out COMES BACK, BUT IF THE HOST WROTE
+        # ANYTHING WHILE IT WAS MOVED, THE HOST'S OWN LATER OUTPUT STAYS ON STDERR; THE SERVER IS MEANT TO OWN ITS PROCESS
+        if ($null -ne $originalOut) {
+            [System.Console]::SetOut($originalOut)
+        }
+        # $null -ne, NOT A TRUTH TEST: THE DEFAULT, Host, IS THE ENUM'S ZERO VALUE
+        if ($null -ne $originalRendering) {
+            $PSStyle.OutputRendering = $originalRendering
         }
     }
 }
